@@ -30,6 +30,10 @@ clr.AddReference(os.path.join(_gac, r"GAC_MSIL\WindowsBase\v4.0_4.0.0.0__31bf385
 from System.Windows import Application
 from System.Threading import Thread, ApartmentState, ThreadStart
 from ui.main_window import MainWindow
+from core import tile_server as _ts
+
+# Start tile caching proxy before the WPF window (daemon thread — no cleanup needed)
+_ts.start()
 
 
 def run():

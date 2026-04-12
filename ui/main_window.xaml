@@ -27,6 +27,32 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Right-side icon buttons (Dock=Right must come before LastChildFill element) -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,4,0">
+
+                    <!-- Download tiles button -->
+                    <Border Name="BtnDownload" Width="26" Height="26" CornerRadius="13"
+                            Background="Transparent" BorderBrush="#3F3F46" BorderThickness="1"
+                            Margin="0,0,6,0" Cursor="Hand" VerticalAlignment="Center">
+                        <TextBlock Text="&#x2B07;" Foreground="#A1A1AA" FontSize="11"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Help button -->
+                    <Border Name="BtnHelp" Width="26" Height="26" CornerRadius="13"
+                            Background="Transparent" BorderBrush="#3F3F46" BorderThickness="1"
+                            Margin="0,0,6,0" Cursor="Hand" VerticalAlignment="Center">
+                        <TextBlock Text="?" Foreground="#A1A1AA" FontSize="13" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Settings gear button -->
+                    <Border Name="BtnSettings" CornerRadius="5" Padding="7,5"
+                            Background="Transparent" Cursor="Hand" VerticalAlignment="Center">
+                        <TextBlock Text="⚙" Foreground="#A1A1AA" FontSize="15" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+
                 <!-- Tab pills -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Center"
@@ -40,6 +66,14 @@
                                    Foreground="#18181B"/>
                     </Border>
 
+                    <Border Name="BtnRoute" CornerRadius="5" Padding="12,5"
+                            Margin="2,0" Background="Transparent" Cursor="Hand">
+                        <TextBlock Name="BtnRouteText"
+                                   Text="Route Planner"
+                                   FontSize="12" FontWeight="Medium"
+                                   Foreground="#A1A1AA"/>
+                    </Border>
+
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -49,5 +83,409 @@
                Grid.Row="1"
                NavigationUIVisibility="Hidden"
                Background="#F4F4F5"/>
+
+        <!-- ── Settings Popup ─────────────────────────────────────────────── -->
+        <Popup Name="SettingsPanel" Grid.Row="0"
+               AllowsTransparency="True" StaysOpen="True"
+               Placement="Bottom" VerticalOffset="2">
+            <Border Width="300"
+                    Background="White" BorderBrush="#E4E4E7" BorderThickness="1"
+                    CornerRadius="0,0,10,10">
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="0" BlurRadius="18"
+                                      Color="#000000" Opacity="0.14"/>
+                </Border.Effect>
+                <StackPanel>
+
+                    <!-- Title row + close button -->
+                    <Grid Margin="18,14,10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Settings" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#18181B" VerticalAlignment="Center"/>
+                        <Border Name="BtnCloseSettings" Grid.Column="1" Width="28" Height="28"
+                                CornerRadius="6" Background="Transparent" Cursor="Hand">
+                            <TextBlock Text="×" FontSize="17" Foreground="#71717A"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel Margin="18,12,18,18">
+
+                        <!-- Font size -->
+                        <TextBlock Text="FONT SIZE" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Name="BtnFontSmall" Grid.Column="0" CornerRadius="5" Padding="0,6"
+                                    Background="Transparent" BorderBrush="#E4E4E7" BorderThickness="1" Cursor="Hand">
+                                <TextBlock Name="TxtFontSmall" Text="Small" FontSize="11" FontWeight="Medium"
+                                           Foreground="#71717A" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Border Name="BtnFontMedium" Grid.Column="2" CornerRadius="5" Padding="0,6"
+                                    Background="#18181B" BorderBrush="#18181B" BorderThickness="0" Cursor="Hand">
+                                <TextBlock Name="TxtFontMedium" Text="Medium" FontSize="11" FontWeight="Medium"
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Border Name="BtnFontLarge" Grid.Column="4" CornerRadius="5" Padding="0,6"
+                                    Background="Transparent" BorderBrush="#E4E4E7" BorderThickness="1" Cursor="Hand">
+                                <TextBlock Name="TxtFontLarge" Text="Large" FontSize="11" FontWeight="Medium"
+                                           Foreground="#71717A" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+
+                        <Separator Background="#E4E4E7" Margin="0,0,0,14"/>
+
+                        <!-- Default map location -->
+                        <TextBlock Text="DEFAULT MAP LOCATION" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Name="LblSettingsCoords" Grid.Column="0"
+                                       Text="48.8566°, 2.3522°"
+                                       FontSize="12" Foreground="#18181B" VerticalAlignment="Center"/>
+                            <TextBlock Name="LblSettingsZoom" Grid.Column="1"
+                                       Text="Zoom 5"
+                                       FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Border Name="BtnSaveMapView" CornerRadius="5" Padding="0,7"
+                                Cursor="Hand" Background="#18181B" Margin="0,6,0,0">
+                            <TextBlock Text="📍  Save current map view" FontSize="11"
+                                       FontWeight="Medium" Foreground="White"
+                                       HorizontalAlignment="Center"/>
+                        </Border>
+
+                        <Separator Background="#E4E4E7" Margin="0,14,0,14"/>
+
+                        <!-- Map style -->
+                        <TextBlock Text="MAP STYLE" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="6"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Map (street) -->
+                            <Border Name="BtnStyleMap" Grid.Row="0" Grid.Column="0"
+                                    CornerRadius="6" Cursor="Hand" ClipToBounds="True"
+                                    BorderBrush="#2563EB" BorderThickness="2">
+                                <StackPanel>
+                                    <Border Height="44" Background="#D6E8F5">
+                                        <Grid>
+                                            <Rectangle Fill="#FFFFFF" Height="2.5"
+                                                       VerticalAlignment="Center" Margin="8,0"/>
+                                            <Rectangle Fill="#C8D8E8" Height="2"
+                                                       VerticalAlignment="Top" Margin="8,12,8,0"/>
+                                            <Rectangle Fill="#C8D8E8" Height="2"
+                                                       VerticalAlignment="Bottom" Margin="8,0,8,12"/>
+                                            <Rectangle Fill="#FFFFFF" Width="2" HorizontalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Background="White" Padding="0,5,0,6">
+                                        <TextBlock Name="TxtStyleMap" Text="Map"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="#18181B"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Relief / Topo -->
+                            <Border Name="BtnStyleRelief" Grid.Row="0" Grid.Column="2"
+                                    CornerRadius="6" Cursor="Hand" ClipToBounds="True"
+                                    BorderBrush="#E4E4E7" BorderThickness="1">
+                                <StackPanel>
+                                    <Border Height="44" Background="#C5DDBA">
+                                        <Grid>
+                                            <Ellipse Width="36" Height="22"
+                                                     Fill="#8BAE7D"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                                            <Ellipse Width="20" Height="12"
+                                                     Fill="#6B9C62"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Background="White" Padding="0,5,0,6">
+                                        <TextBlock Name="TxtStyleRelief" Text="Relief"
+                                                   FontSize="11" FontWeight="Medium"
+                                                   Foreground="#71717A"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Satellite -->
+                            <Border Name="BtnStyleSat" Grid.Row="2" Grid.Column="0"
+                                    CornerRadius="6" Cursor="Hand" ClipToBounds="True"
+                                    BorderBrush="#E4E4E7" BorderThickness="1">
+                                <StackPanel>
+                                    <Border Height="44" Background="#1B2838">
+                                        <Grid>
+                                            <Ellipse Width="30" Height="30"
+                                                     Fill="#2A4060"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                                            <Ellipse Width="16" Height="16"
+                                                     Fill="#3D6080"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                                            <Ellipse Width="6" Height="6"
+                                                     Fill="#6A9ABE"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Background="White" Padding="0,5,0,6">
+                                        <TextBlock Name="TxtStyleSat" Text="Satellite"
+                                                   FontSize="11" FontWeight="Medium"
+                                                   Foreground="#71717A"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Hybrid -->
+                            <Border Name="BtnStyleHybrid" Grid.Row="2" Grid.Column="2"
+                                    CornerRadius="6" Cursor="Hand" ClipToBounds="True"
+                                    BorderBrush="#E4E4E7" BorderThickness="1">
+                                <StackPanel>
+                                    <Border Height="44" Background="#1B2838">
+                                        <Grid>
+                                            <Ellipse Width="30" Height="30"
+                                                     Fill="#2A4060"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"/>
+                                            <Rectangle Fill="#FFFFFF" Height="2"
+                                                       VerticalAlignment="Center"
+                                                       Margin="6,0" Opacity="0.75"/>
+                                            <Rectangle Fill="#FFFFFF" Width="2"
+                                                       HorizontalAlignment="Center"
+                                                       Opacity="0.75"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Background="White" Padding="0,5,0,6">
+                                        <TextBlock Name="TxtStyleHybrid" Text="Hybrid"
+                                                   FontSize="11" FontWeight="Medium"
+                                                   Foreground="#71717A"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Separator Background="#E4E4E7" Margin="0,14,0,14"/>
+
+                        <!-- Track arrows -->
+                        <TextBlock Text="TRACK ARROWS" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Show direction arrow every N points"
+                                       FontSize="11" Foreground="#18181B" TextWrapping="Wrap"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Name="TxtArrowEveryN" Grid.Column="1"
+                                     Width="48" Height="26"
+                                     FontSize="12" TextAlignment="Center"
+                                     VerticalContentAlignment="Center"
+                                     BorderBrush="#E4E4E7" BorderThickness="1"
+                                     Text="20"/>
+                        </Grid>
+                        <TextBlock Text="Set to 0 to disable arrows" FontSize="10"
+                                   Foreground="#A1A1AA" Margin="0,4,0,0"/>
+
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- ── Help Popup ──────────────────────────────────────────────────── -->
+        <Popup Name="HelpPanel" Grid.Row="0"
+               AllowsTransparency="True" StaysOpen="True"
+               Placement="Bottom" VerticalOffset="2">
+            <Border Width="320"
+                    Background="White" BorderBrush="#E4E4E7" BorderThickness="1"
+                    CornerRadius="0,0,10,10">
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="0" BlurRadius="18"
+                                      Color="#000000" Opacity="0.14"/>
+                </Border.Effect>
+                <StackPanel>
+
+                    <!-- Title row + close button -->
+                    <Grid Margin="18,14,10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Help" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#18181B" VerticalAlignment="Center"/>
+                        <Border Name="BtnCloseHelp" Grid.Column="1" Width="28" Height="28"
+                                CornerRadius="6" Background="Transparent" Cursor="Hand">
+                            <TextBlock Text="×" FontSize="17" Foreground="#71717A"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel Margin="18,12,18,18">
+
+                        <TextBlock Text="MAP PAGE" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="11" Foreground="#18181B" TextWrapping="Wrap" Margin="0,0,0,6"
+                                   Text="• Load GPX or FIT files — multiple files supported&#x0a;• Click a track in the tree to select it&#x0a;• Click on the path to inspect a point&#x0a;• Right-click on the path for edit options&#x0a;• Eye icon toggles track visibility"/>
+
+                        <Separator Background="#E4E4E7" Margin="0,6,0,10"/>
+
+                        <TextBlock Text="ROUTE PLANNER" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="11" Foreground="#18181B" TextWrapping="Wrap"
+                                   Text="• Click to add waypoints — each segment has its own mode&#x0a;• Drag a marker to move it&#x0a;• Right-click a marker to remove it&#x0a;• Draw mode: click vertices, right-click to finish segment&#x0a;• Click a segment connector to cycle its routing mode"/>
+
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- ── Download Popup ─────────────────────────────────────────────── -->
+        <Popup Name="DownloadPanel" Grid.Row="0"
+               AllowsTransparency="True" StaysOpen="True"
+               Placement="Bottom" VerticalOffset="2">
+            <Border Width="310"
+                    Background="White" BorderBrush="#E4E4E7" BorderThickness="1"
+                    CornerRadius="0,0,10,10">
+                <Border.Effect>
+                    <DropShadowEffect ShadowDepth="0" BlurRadius="18"
+                                      Color="#000000" Opacity="0.14"/>
+                </Border.Effect>
+                <StackPanel>
+
+                    <!-- Title row + close -->
+                    <Grid Margin="18,14,10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Download Map Tiles"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#18181B" VerticalAlignment="Center"/>
+                        <Border Name="BtnCloseDownload" Grid.Column="1" Width="28" Height="28"
+                                CornerRadius="6" Background="Transparent" Cursor="Hand">
+                            <TextBlock Text="×" FontSize="17" Foreground="#71717A"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel Margin="18,12,18,18">
+
+                        <!-- Area bounds -->
+                        <TextBlock Text="AREA (CURRENT VIEW)" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#A1A1AA" Margin="0,0,0,4"/>
+                        <TextBlock Name="LblDlBounds" Text="Open a map first"
+                                   FontSize="11" Foreground="#18181B"
+                                   TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                        <!-- Style + Zoom row -->
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="STYLE" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="#A1A1AA" Margin="0,0,0,4"/>
+                                <TextBlock Name="LblDlStyle" Text="Map"
+                                           FontSize="11" Foreground="#18181B"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="ZOOM RANGE" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="#A1A1AA" Margin="0,0,0,4"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Name="LblDlZoomFrom" Text="Z5"
+                                               FontSize="11" Foreground="#18181B"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text=" → " FontSize="11" Foreground="#A1A1AA"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Name="TxtDlZoomTo" Width="38" Height="22"
+                                             FontSize="11" TextAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             BorderBrush="#E4E4E7" BorderThickness="1"
+                                             Text="14"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Tile count estimate -->
+                        <TextBlock Name="LblDlCount" Text="~0 tiles · ~0 MB estimated"
+                                   FontSize="11" Foreground="#71717A" Margin="0,2,0,10"/>
+
+                        <Separator Background="#E4E4E7" Margin="0,0,0,10"/>
+
+                        <!-- Progress panel (collapsed until download starts) -->
+                        <Grid Name="PnlDlProgress" Visibility="Collapsed" Margin="0,0,0,10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ProgressBar Name="PbDownload" Grid.Row="0"
+                                         Height="6" BorderThickness="0"
+                                         Background="#E4E4E7" Foreground="#2563EB"
+                                         Value="0" Maximum="100" Margin="0,0,0,4"/>
+                            <TextBlock Name="LblDlProgress" Grid.Row="1"
+                                       Text="0 / 0 tiles" FontSize="10"
+                                       Foreground="#71717A" HorizontalAlignment="Right"/>
+                        </Grid>
+
+                        <!-- Cache size -->
+                        <TextBlock Name="LblDlCacheSize" Text="Cache: 0 MB on disk"
+                                   FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,10"/>
+
+                        <!-- Action buttons -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Name="BtnClearCache" Grid.Column="0" CornerRadius="5" Padding="0,7"
+                                    Cursor="Hand" Background="Transparent"
+                                    BorderBrush="#E4E4E7" BorderThickness="1">
+                                <TextBlock Text="Clear cache" FontSize="11" FontWeight="Medium"
+                                           Foreground="#71717A" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Border Name="BtnStartDownload" Grid.Column="2" CornerRadius="5" Padding="0,7"
+                                    Cursor="Hand" Background="#2563EB">
+                                <TextBlock Name="TxtDlBtn" Text="Download"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+
     </Grid>
 </Window>

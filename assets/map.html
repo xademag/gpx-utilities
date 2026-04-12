@@ -21,11 +21,11 @@
             color: #FAFAFA;
             border: none;
             border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 9px 20px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         #toggle-btn:hover { background: #27272A; }
 
@@ -66,7 +66,7 @@
             padding: 0 10px;
             border-bottom: 1px solid #E4E4E7;
             background: #F9F9F9;
-            font-size: 10px; font-weight: 600; color: #A1A1AA; text-transform: uppercase;
+            font-size: 12px; font-weight: 600; color: #A1A1AA; text-transform: uppercase;
             box-sizing: border-box;
         }
         .ch { overflow: hidden; white-space: nowrap; }
@@ -81,7 +81,7 @@
             display: flex; align-items: center;
             padding: 4px 10px;
             border-bottom: 1px solid #F4F4F5;
-            cursor: pointer; font-size: 11px; color: #3F3F46;
+            cursor: pointer; font-size: 13px; color: #3F3F46;
             box-sizing: border-box;
         }
         .pt-row:last-child { border-bottom: none; }
@@ -96,13 +96,13 @@
             background: #F4F4F5;
             border-top: 2px solid #7C3AED;
             border-bottom: 2px solid #7C3AED;
-            font-size: 10px; font-weight: 600;
+            font-size: 12px; font-weight: 600;
             color: #7C3AED; text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
         /* ── Column widths ───────────────────────────── */
-        .c-idx   { width: 38px;  flex-shrink: 0; color: #A1A1AA; font-size: 10px; text-align: right; padding-right: 8px; }
+        .c-idx   { width: 38px;  flex-shrink: 0; color: #A1A1AA; font-size: 12px; text-align: right; padding-right: 8px; }
         .c-time  { width: 64px;  flex-shrink: 0; color: #52525B; }
         .c-dist  { width: 54px;  flex-shrink: 0; color: #2563EB; font-weight: 600; }
         .c-gap   { width: 50px;  flex-shrink: 0; color: #52525B; }
@@ -136,6 +136,8 @@
         .ctx-danger { color: #DC2626; }
         .ctx-danger:hover { background: #FEF2F2 !important; }
         .ctx-divider { height: 1px; background: #E4E4E7; margin: 4px 0; }
+        .ctx-disabled { color: #C4C4C7 !important; cursor: default; pointer-events: none; }
+        .ctx-danger.ctx-disabled { color: #FCA5A5 !important; }
 
         /* ── Help button ─────────────────────────────── */
         #help-btn {
@@ -224,8 +226,8 @@
             z-index: 1001;
             background: rgba(24,24,27,0.82);
             color: #FAFAFA;
-            font-size: 11.5px;
-            padding: 5px 90px 5px 14px;
+            font-size: 13px;
+            padding: 6px 90px 6px 14px;
             pointer-events: none;
             white-space: nowrap;
             overflow: hidden;
@@ -289,22 +291,42 @@
             z-index: 2000;
             background: rgba(24,24,27,0.93);
             color: #FAFAFA;
-            border-radius: 8px;
-            padding: 10px 13px;
+            border-radius: 10px;
+            padding: 13px 17px;
             pointer-events: none;
-            min-width: 260px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-            line-height: 1.5;
+            min-width: 300px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+            line-height: 1.55;
         }
-        .tt-header  { font-size: 12px; font-weight: 700; margin-bottom: 1px; }
-        .tt-time    { font-weight: 400; color: #A1A1AA; margin-left: 8px; font-size: 11px; }
-        .tt-coord   { color: #D4D4D8; font-size: 10.5px; margin-bottom: 2px; }
-        .tt-ele     { color: #A1A1AA; font-size: 10.5px; }
-        .tt-divider { height: 1px; background: rgba(255,255,255,0.12); margin: 7px 0 6px; }
+        .tt-header  { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+        .tt-time    { font-weight: 400; color: #A1A1AA; margin-left: 8px; font-size: 14px; }
+        .tt-coord   { color: #D4D4D8; font-size: 13px; margin-bottom: 3px; }
+        .tt-ele     { color: #A1A1AA; font-size: 13px; }
+        .tt-divider { height: 1px; background: rgba(255,255,255,0.12); margin: 8px 0 7px; }
         .tt-grid    { display: table; width: 100%; }
         .tt-row     { display: table-row; }
-        .tt-label   { display: table-cell; color: #A1A1AA; font-size: 10px; padding-right: 8px; width: 52px; }
-        .tt-val     { display: table-cell; font-size: 11px; font-weight: 600; color: #FAFAFA; }
+        .tt-label   { display: table-cell; color: #A1A1AA; font-size: 13px; padding-right: 8px; width: 62px; }
+        .tt-val     { display: table-cell; font-size: 14px; font-weight: 600; color: #FAFAFA; }
+
+        /* ── Measure toolbox ─────────────────────────────── */
+        #meas-tool {
+            position: absolute; bottom: 56px; right: 10px; z-index: 1000;
+            background: rgba(24,24,27,0.85); color: #FAFAFA;
+            border-radius: 10px; padding: 8px 13px;
+            display: flex; align-items: center; gap: 9px;
+            cursor: grab; user-select: none; -ms-user-select: none;
+        }
+        #meas-handle { color: #71717A; font-size: 15px; line-height: 1; cursor: grab; }
+        #meas-dist-btn, #meas-area-btn, #meas-clear-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 22px; padding: 0; line-height: 1; color: #FAFAFA; opacity: 0.7;
+        }
+        #meas-dist-btn:hover, #meas-area-btn:hover { opacity: 1; }
+        #meas-dist-btn.active { opacity: 1; color: #F59E0B; }
+        #meas-area-btn.active { opacity: 1; color: #A78BFA; }
+        #meas-clear-btn { font-size: 18px; color: #A1A1AA; }
+        #meas-clear-btn:hover { color: #FAFAFA; }
+        #meas-result { font-size: 15px; color: #22C55E; white-space: nowrap; min-width: 0; font-weight: 600; }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -313,6 +335,15 @@
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- ── Measure toolbox ────────────────────────────── -->
+    <div id="meas-tool" title="Drag to move">
+        <span id="meas-handle">⠿</span>
+        <button id="meas-dist-btn" onclick="startMeasure('dist')" title="Measure distance">📏</button>
+        <button id="meas-area-btn" onclick="startMeasure('area')" title="Measure area">⬡</button>
+        <span id="meas-result"></span>
+        <button id="meas-clear-btn" onclick="clearMeasure()" title="Clear" style="display:none">×</button>
+    </div>
 
     <button id="toggle-btn" onclick="togglePanel()">
         Points <span id="toggle-count"></span>
@@ -355,9 +386,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Help button -->
-    <button id="help-btn" onclick="openHelp()">?</button>
 
     <!-- Help modal -->
     <div id="help-overlay" onclick="closeHelp()">
@@ -411,23 +439,77 @@
 
     <!-- Context menu -->
     <div id="ctx-menu">
-        <div class="ctx-label">Selection</div>
-        <div class="ctx-item ctx-danger" onclick="ctxDelete()">Delete</div>
-        <div class="ctx-item ctx-danger" onclick="ctxDeleteJoin()">Delete and join</div>
+        <div id="ctx-lbl" class="ctx-label">Track</div>
+        <div id="ctx-delete"     class="ctx-item ctx-danger" onclick="ctxDelete()">Delete</div>
+        <div id="ctx-deletejoin" class="ctx-item ctx-danger" onclick="ctxDeleteJoin()">Delete and join</div>
         <div class="ctx-divider"></div>
-        <div class="ctx-item" onclick="ctxSplit()">Split</div>
-        <div class="ctx-item" onclick="ctxDuplicate()">Duplicate</div>
+        <div id="ctx-split"     class="ctx-item" onclick="ctxSplit()">Split</div>
+        <div id="ctx-duplicate" class="ctx-item" onclick="ctxDuplicate()">Duplicate</div>
         <div class="ctx-divider"></div>
-        <div class="ctx-item" onclick="ctxChangeStartTime()">Change start time&#8230;</div>
-        <div class="ctx-item" onclick="ctxIncreaseSpeed()">Increase speed&#8230;</div>
+        <div id="ctx-starttime" class="ctx-item" onclick="ctxChangeStartTime()">Change start time&#8230;</div>
+        <div id="ctx-speed"     class="ctx-item" onclick="ctxIncreaseSpeed()">Increase speed&#8230;</div>
     </div>
 
     <script>
         var map = L.map('map').setView([48.8566, 2.3522], 5);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }).addTo(map);
+
+        // ── Tile layer switcher ───────────────────────────────────────────────
+        var _tileLayer      = null;
+        var _tileOverlay    = null;
+        var _currentStyle   = 'map';
+        var _tileServerPort = 0;
+
+        var _TILES = {
+            'map': {
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                opt: { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 19 }
+            },
+            'relief': {
+                url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                opt: { attribution: 'Map data: &copy; OpenStreetMap contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>', maxZoom: 17 }
+            },
+            'satellite': {
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                opt: { attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics', maxZoom: 19 }
+            },
+            'hybrid': {
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                opt: { attribution: 'Tiles &copy; Esri', maxZoom: 19 },
+                overlay: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+            }
+        };
+
+        function _localUrl(style) {
+            return 'http://127.0.0.1:' + _tileServerPort + '/tiles/' + style + '/{z}/{x}/{y}.png';
+        }
+
+        function setTileServerPort(port) {
+            _tileServerPort = parseInt(port, 10) || 0;
+            if (_tileServerPort > 0) {
+                _TILES['map'].url         = _localUrl('map');
+                _TILES['relief'].url      = _localUrl('relief');
+                _TILES['satellite'].url   = _localUrl('satellite');
+                _TILES['hybrid'].url      = _localUrl('satellite');
+                _TILES['hybrid'].overlay  = _localUrl('hybrid_overlay');
+            }
+            setTileLayer(_currentStyle);
+        }
+
+        function setTileLayer(name) {
+            _currentStyle = name;
+            var cfg = _TILES[name] || _TILES['map'];
+            if (_tileLayer)   { map.removeLayer(_tileLayer);   _tileLayer   = null; }
+            if (_tileOverlay) { map.removeLayer(_tileOverlay); _tileOverlay = null; }
+            _tileLayer = L.tileLayer(cfg.url, cfg.opt).addTo(map);
+            _tileLayer.bringToBack();
+            if (cfg.overlay) {
+                _tileOverlay = L.tileLayer(cfg.overlay, { opacity: 0.85, maxZoom: 19 }).addTo(map);
+                _tileOverlay.bringToBack();
+                _tileLayer.bringToBack();
+            }
+        }
+
+        setTileLayer('map');
 
         // ── Track data ────────────────────────────────────────────────────────
         // _allPts: flat array of all points. _splitIdx >= 0 means the track is
@@ -454,6 +536,9 @@
 
         // Direction arrows
         var _arrows = [];
+
+        // Background tracks (other loaded files)
+        var _bgPolylines = [];
 
         // ── Map dots ──────────────────────────────────────────────────────────
         var _hoverDot = L.circleMarker([0,0], {
@@ -505,11 +590,18 @@
             _arrows = [];
         }
 
+        var _arrowEveryN = 20;
+
+        function setArrowEveryN(n) {
+            _arrowEveryN = Math.max(0, parseInt(n, 10) || 0);
+            if (_allPts && _allPts.length > 1) { _drawArrows(_allPts); }
+        }
+
         function _drawArrows(pts) {
             _clearArrows();
-            if (pts.length < 2) { return; }
+            if (pts.length < 2 || _arrowEveryN === 0) { return; }
 
-            var STEP = 50, OFFSET = 25; // first arrow at pt 25, then 75, 125 …
+            var STEP = _arrowEveryN, OFFSET = Math.floor(STEP / 2);
 
             for (var i = OFFSET; i < pts.length - 1; i += STEP) {
                 var p1 = pts[i], p2 = pts[i + 1];
@@ -557,55 +649,70 @@
             }
         }
 
+        // Tracks font-size setting so compass scales with the rest of the UI
+        var _uiScale = 1.0;
+
         function _compassSvg(b) {
+            // All coordinates are in a fixed 88×98 logical space; width/height
+            // are scaled by _uiScale so the compass grows with the font setting.
             var deg = Math.round(((b % 360) + 360) % 360);
-            var cx = 28, cy = 28, r = 24;
+            var cx = 44, cy = 44, r = 38;
+
+            // Tick marks — cardinal ticks are longer and slightly brighter
             var ticks = '';
             for (var t = 0; t < 360; t += 30) {
-                var rad = (t - 90) * Math.PI / 180;
-                var inner = t % 90 === 0 ? r - 7 : r - 4;
+                var isCard = (t % 90 === 0);
+                var rad   = (t - 90) * Math.PI / 180;
+                var inner = isCard ? r - 13 : r - 7;
+                var sw    = isCard ? '2' : '1.3';
+                var sc    = isCard ? 'rgba(255,255,255,0.70)' : 'rgba(255,255,255,0.40)';
                 var x1 = cx + r * Math.cos(rad), y1 = cy + r * Math.sin(rad);
                 var x2 = cx + inner * Math.cos(rad), y2 = cy + inner * Math.sin(rad);
                 ticks += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+
                          '" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+
-                         '" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>';
+                         '" stroke="'+sc+'" stroke-width="'+sw+'"/>';
             }
-            var labels = [
-                {l:'N', a:0},  {l:'E', a:90}, {l:'S', a:180}, {l:'W', a:270}
-            ];
-            var ltext = '';
+
+            // Cardinal labels — N is orange, others are bright white
+            var labels = [{l:'N',a:0},{l:'E',a:90},{l:'S',a:180},{l:'W',a:270}];
+            var ltext  = '';
             labels.forEach(function(lv) {
                 var rad = (lv.a - 90) * Math.PI / 180;
-                var lx = cx + (r - 10) * Math.cos(rad);
-                var ly = cy + (r - 10) * Math.sin(rad) + 3.5;
-                var col = lv.l === 'N' ? '#FB923C' : 'rgba(255,255,255,0.55)';
+                var lx  = cx + (r - 18) * Math.cos(rad);
+                var ly  = cy + (r - 18) * Math.sin(rad) + 4.5;
+                var col = lv.l === 'N' ? '#FB923C' : 'rgba(255,255,255,0.90)';
                 ltext += '<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+
-                         '" text-anchor="middle" font-size="7" font-weight="700" fill="'+col+'">'+lv.l+'</text>';
+                         '" text-anchor="middle" font-size="12" font-weight="700" fill="'+col+'">'+lv.l+'</text>';
             });
-            var nRad = (b - 90) * Math.PI / 180;
-            var sRad = (b + 90) * Math.PI / 180;
-            var needleLen = r - 9;
-            var nx = cx + needleLen * Math.cos(nRad), ny = cy + needleLen * Math.sin(nRad);
-            var sx = cx + needleLen * Math.cos(sRad), sy = cy + needleLen * Math.sin(sRad);
-            var perpRad = (b) * Math.PI / 180;
-            var pw = 3;
-            var px = pw * Math.cos(perpRad), py = pw * Math.sin(perpRad);
+
+            // Two-triangle needle: north = orange, south = light grey
+            var nRad     = (b - 90) * Math.PI / 180;
+            var sRad     = (b + 90) * Math.PI / 180;
+            var needleL  = r - 13;
+            var nx = cx + needleL * Math.cos(nRad), ny = cy + needleL * Math.sin(nRad);
+            var sx = cx + needleL * Math.cos(sRad), sy = cy + needleL * Math.sin(sRad);
+            var perpRad  = b * Math.PI / 180;
+            var pw = 5;
+            var ppx = pw * Math.cos(perpRad), ppy = pw * Math.sin(perpRad);
             var needle =
                 '<polygon points="'+nx.toFixed(1)+','+ny.toFixed(1)+' '+
-                (cx+px).toFixed(1)+','+(cy+py).toFixed(1)+' '+
-                sx.toFixed(1)+','+sy.toFixed(1)+' '+
-                (cx-px).toFixed(1)+','+(cy-py).toFixed(1)+
-                '" fill="#FB923C" opacity="0.9"/>'+
+                (cx+ppx).toFixed(1)+','+(cy+ppy).toFixed(1)+' '+
+                (cx-ppx).toFixed(1)+','+(cy-ppy).toFixed(1)+
+                '" fill="#FB923C"/>'+
                 '<polygon points="'+sx.toFixed(1)+','+sy.toFixed(1)+' '+
-                (cx+px).toFixed(1)+','+(cy+py).toFixed(1)+' '+
-                nx.toFixed(1)+','+ny.toFixed(1)+' '+
-                (cx-px).toFixed(1)+','+(cy-py).toFixed(1)+
-                '" fill="rgba(255,255,255,0.4)" opacity="0.9" clip-path="url(#chalf)"/>';
-            return '<svg width="56" height="62" xmlns="http://www.w3.org/2000/svg">'+
-                '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>'+
+                (cx+ppx).toFixed(1)+','+(cy+ppy).toFixed(1)+' '+
+                (cx-ppx).toFixed(1)+','+(cy-ppy).toFixed(1)+
+                '" fill="rgba(255,255,255,0.55)"/>';
+
+            var W = Math.round(88 * _uiScale);
+            var H = Math.round(98 * _uiScale);
+            return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 88 98" xmlns="http://www.w3.org/2000/svg">'+
+                '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+
+                    '" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.32)" stroke-width="1.5"/>'+
                 ticks + ltext + needle +
-                '<circle cx="'+cx+'" cy="'+cy+'" r="2.5" fill="#FAFAFA" opacity="0.8"/>'+
-                '<text x="'+cx+'" y="58" text-anchor="middle" font-size="9" font-weight="600" fill="rgba(255,255,255,0.75)">'+deg+'°</text>'+
+                '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#FAFAFA" opacity="0.92"/>'+
+                '<text x="'+cx+'" y="93" text-anchor="middle" font-size="12" font-weight="700"'+
+                    ' fill="rgba(255,255,255,0.92)">'+deg+'°</text>'+
                 '</svg>';
         }
 
@@ -623,7 +730,7 @@
             if (spd  !== null) { rows += '<div class="tt-row"><span class="tt-label">Speed</span><span class="tt-val">'+spd.toFixed(1)+' km/h</span></div>'; }
 
             var compass = (_bearings.length > idx)
-                ? '<td style="vertical-align:middle;padding-left:10px;">'+_compassSvg(_bearings[idx])+'</td>'
+                ? '<td style="vertical-align:middle;padding-left:16px;padding-top:2px;">'+_compassSvg(_bearings[idx])+'</td>'
                 : '';
             var textCell =
                 '<div class="tt-header">#'+(idx+1)+
@@ -633,7 +740,8 @@
                 (p.ele != null ? '<div class="tt-ele">Elevation: '+p.ele.toFixed(0)+' m</div>' : '')+
                 (rows ? '<div class="tt-divider"></div><div class="tt-grid">'+rows+'</div>' : '');
             var html = compass
-                ? '<table style="border-collapse:collapse;"><tr><td style="vertical-align:top;">'+textCell+'</td>'+compass+'</tr></table>'
+                ? '<table style="border-collapse:collapse;width:100%;"><tr>'+
+                  '<td style="vertical-align:top;">'+textCell+'</td>'+compass+'</tr></table>'
                 : textCell;
 
             var el = document.getElementById('map-tooltip');
@@ -685,10 +793,16 @@
         }
 
         // ── Hover ─────────────────────────────────────────────────────────────
-        function _onHover(idx) {
+        // fromMap=true  → show the tooltip (hover on the map track)
+        // fromMap=false → highlight dot + row only, tooltip stays hidden (hover in list)
+        function _onHover(idx, fromMap) {
+            if (fromMap === undefined) { fromMap = true; }
             if (idx === _hoverIdx) {
-                // Same point — just reposition tooltip (mouse may have moved)
-                if (idx >= 0) { _positionTooltip(document.getElementById('map-tooltip')); }
+                if (fromMap && idx >= 0) {
+                    // Mouse still on same map point — ensure tooltip is visible and positioned
+                    _showTooltip(idx);
+                    _positionTooltip(document.getElementById('map-tooltip'));
+                }
                 return;
             }
             var prev = _hoverIdx; _hoverIdx = idx;
@@ -703,7 +817,8 @@
             _hoverDot.setStyle({ opacity: 1, fillOpacity: 0.85 });
             _refreshRow(idx);
             if (_anchorIdx < 0) { _scrollToRow(idx); }
-            _showTooltip(idx);
+            if (fromMap) { _showTooltip(idx); }
+            else         { _hideTooltip(); }
         }
         function _clearHover() { _hideTooltip(); _onHover(-1); }
         function _scrollToRow(idx) {
@@ -813,11 +928,18 @@
                 L.DomEvent.stopPropagation(e);
                 _selectPoint(_nearestIdx(e.latlng.lat, e.latlng.lng), e.originalEvent.shiftKey);
             });
+            poly.on('contextmenu', function(e) {
+                L.DomEvent.preventDefault(e);
+                L.DomEvent.stopPropagation(e);
+                _showCtxMenu(e.originalEvent.clientX, e.originalEvent.clientY);
+            });
         }
 
         function _redrawPolylines() {
             if (_track)  { map.removeLayer(_track);  _track  = null; }
             if (_track2) { map.removeLayer(_track2); _track2 = null; }
+
+            if (!_allPts || _allPts.length === 0) { _clearArrows(); return; }
 
             if (_splitIdx < 0 || _splitIdx >= _allPts.length - 1) {
                 // Single segment
@@ -835,17 +957,82 @@
             }
 
             _drawArrows(_allPts);
+
+            // Active track always on top of background tracks
+            if (_track)  { _track.bringToFront(); }
+            if (_track2) { _track2.bringToFront(); }
+        }
+
+        // ── Background tracks (other loaded files) ────────────────────────────
+        function drawBgTracks(jsonStr) {
+            _bgPolylines.forEach(function(p) { map.removeLayer(p); });
+            _bgPolylines = [];
+            var tracks = JSON.parse(jsonStr);
+            for (var i = 0; i < tracks.length; i++) {
+                var pts = tracks[i];
+                if (!pts || pts.length < 2) { continue; }
+                var ll = pts.map(function(p) { return [p.lat, p.lon]; });
+                var poly = L.polyline(ll, {
+                    color: '#94A3B8', weight: 3, opacity: 0.55, interactive: false
+                }).addTo(map);
+                _bgPolylines.push(poly);
+            }
+            // Active track always on top
+            if (_track)  { _track.bringToFront(); }
+            if (_track2) { _track2.bringToFront(); }
+            // Fit view to ALL visible tracks
+            _fitAllTracks();
+        }
+
+        function _fitAllTracks() {
+            var bounds = null;
+            function ext(poly) {
+                if (!poly) { return; }
+                var b = poly.getBounds();
+                if (!b.isValid()) { return; }
+                bounds = bounds ? bounds.extend(b) : b;
+            }
+            ext(_track);
+            ext(_track2);
+            for (var i = 0; i < _bgPolylines.length; i++) { ext(_bgPolylines[i]); }
+            if (bounds && bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [20, 20] });
+            }
         }
 
         // ── Context menu ──────────────────────────────────────────────────────
         function _showCtxMenu(x, y) {
-            if (_anchorIdx < 0) { return; }
+            var hasSel   = _anchorIdx >= 0;
+            var hasRange = hasSel && (_selEnd >= 0 && _selEnd !== _anchorIdx);
+
+            // Update label
+            document.getElementById('ctx-lbl').innerHTML = hasSel ? 'Selection' : 'Track';
+
+            // Items that need a range selection
+            var rangeOnly = ['ctx-delete', 'ctx-deletejoin', 'ctx-split', 'ctx-duplicate'];
+            rangeOnly.forEach(function(id) {
+                _ctxSetDisabled(id, !hasRange);
+            });
+
+            // Increase speed: works with selection OR whole track (needs timestamps)
+            _ctxSetDisabled('ctx-speed', false);
+
+            // Change start time: always available
+            _ctxSetDisabled('ctx-starttime', false);
+
             var el = document.getElementById('ctx-menu');
             el.style.left    = x + 'px';
             el.style.top     = y + 'px';
             el.style.display = 'block';
-            // Flip left if overflowing viewport right
-            if (x + 200 > window.innerWidth) { el.style.left = (x - 200) + 'px'; }
+            if (x + 210 > window.innerWidth) { el.style.left = (x - 210) + 'px'; }
+            if (y + el.offsetHeight > window.innerHeight) { el.style.top = (y - el.offsetHeight) + 'px'; }
+        }
+
+        function _ctxSetDisabled(id, disabled) {
+            var el = document.getElementById(id);
+            if (!el) { return; }
+            var cls = el.className.replace(' ctx-disabled', '');
+            el.className = disabled ? cls + ' ctx-disabled' : cls;
         }
         function _hideCtxMenu() {
             document.getElementById('ctx-menu').style.display = 'none';
@@ -955,7 +1142,7 @@
             if (!_allPts.length) { bar.style.display = 'none'; return; }
             bar.style.display = 'block';
 
-            var lbl = '<span style="color:#A1A1AA;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;">';
+            var lbl = '<span style="color:#A1A1AA;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;">';
             var totalDist = _cumDist.length >= _allPts.length ? _cumDist[_allPts.length - 1] : null;
             var t0 = _epoch(_allPts[0].time), t1 = _epoch(_allPts[_allPts.length - 1].time);
             var totalDur = (t0 !== null && t1 !== null) ? t1 - t0 : null;
@@ -972,7 +1159,7 @@
                 var selDur = (ts !== null && te !== null) ? te - ts : null;
                 selEl.innerHTML = lbl + 'Selected</span>&nbsp; ' +
                     (selDist !== null ? _fmtDist(selDist) : '—') + ' &middot; ' + _fmtDuration(selDur) +
-                    ' <span style="color:#A1A1AA;font-size:10px;">(#' + (mn+1) + '&ndash;' + (mx+1) + ')</span>';
+                    ' <span style="color:#A1A1AA;font-size:11px;">(#' + (mn+1) + '&ndash;' + (mx+1) + ')</span>';
                 sepEl.style.display = 'inline';
                 selEl.style.display = 'inline';
             } else {
@@ -1035,19 +1222,22 @@
         // ── Increase speed ────────────────────────────────────────────────────
         function ctxIncreaseSpeed() {
             _hideCtxMenu();
-            if (_anchorIdx < 0) { alert('Select a range of points first.'); return; }
-            var mn = _selMin(), mx = _selMax();
-            if (mn === mx) { alert('Select more than one point.'); return; }
+            // Use selection if available, otherwise apply to whole track
+            var hasRange = _anchorIdx >= 0 && _selEnd >= 0 && _selEnd !== _anchorIdx;
+            var mn = hasRange ? _selMin() : 0;
+            var mx = hasRange ? _selMax() : _allPts.length - 1;
+            if (mn === mx) { alert('Need at least two points.'); return; }
             _precompute(_allPts);
             var segDistKm = (_cumDist[mx] - _cumDist[mn]) / 1000;
             var tS = _epoch(_allPts[mn].time), tE = _epoch(_allPts[mx].time);
-            if (tS === null || tE === null) { alert('Selected points have no timestamps.'); return; }
+            if (tS === null || tE === null) { alert('Points have no timestamps.'); return; }
             var curDurMs = tE - tS;
             var curDurH  = curDurMs / 3600000;
             var curSpeed = curDurH > 0 ? (segDistKm / curDurH) : 0;
             var curPace  = segDistKm > 0 ? (curDurMs / 60000) / segDistKm : 0;
+            var scopeLabel = hasRange ? 'Selected Segment' : 'Whole Track';
 
-            _showModal('Increase Speed &mdash; Selected Segment',
+            _showModal('Increase Speed &mdash; ' + scopeLabel,
                 '<div class="modal-field">' +
                   '<label class="modal-label">Speed change value (positive = faster)</label>' +
                   '<input id="mi-spd" class="modal-input" type="text" value="" placeholder="e.g. 2"/>' +
@@ -1057,7 +1247,8 @@
                   '<label class="modal-radio"><input type="radio" name="spdu" value="kmh" checked/> &nbsp;km/h &nbsp;<span style="color:#A1A1AA;font-size:10.5px;">current: '+curSpeed.toFixed(1)+' km/h</span></label>' +
                   '<label class="modal-radio"><input type="radio" name="spdu" value="minkm"/> &nbsp;min/km &nbsp;<span style="color:#A1A1AA;font-size:10.5px;">current: '+curPace.toFixed(2)+' min/km (lower = faster)</span></label>' +
                 '</div>' +
-                '<div class="modal-hint">Time gaps inside the selection are scaled proportionally.<br/>All points after the selection shift by the same time delta.</div>',
+                '<div class="modal-hint">Time gaps are scaled proportionally.' +
+                (hasRange ? '<br/>Points after the selection shift by the same time delta.' : '') + '</div>',
                 function() {
                     var val = parseFloat(document.getElementById('mi-spd').value);
                     if (isNaN(val) || val === 0) { return; }
@@ -1098,7 +1289,6 @@
         // ── Draw track (called from Python) ───────────────────────────────────
         function drawTrack(jsonStr) {
             _allPts = JSON.parse(jsonStr);
-            if (!_allPts || _allPts.length === 0) { return; }
 
             _markers.forEach(function(m) { map.removeLayer(m); }); _markers = [];
             _hoverIdx = -1; _anchorIdx = -1; _selEnd = -1; _splitIdx = -1;
@@ -1110,6 +1300,8 @@
             _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
 
             _redrawPolylines();
+
+            if (!_allPts || _allPts.length === 0) { return; }
             _hoverDot.addTo(map);
             _anchorDot.addTo(map);
             _endDot.addTo(map);
@@ -1122,8 +1314,6 @@
                 radius: 7, color: '#B91C1C', fillColor: '#EF4444', fillOpacity: 1, weight: 2
             }).bindTooltip('End').addTo(map);
             _markers.push(sm, em);
-
-            map.fitBounds(_track.getBounds(), { padding: [20, 20] });
 
             _buildPanel(_allPts);
             document.getElementById('toggle-btn').style.display = 'block';
@@ -1169,7 +1359,7 @@
             list.onmouseover = function(e) {
                 var el = e.target || e.srcElement;
                 while (el && el !== list) {
-                    if (el.getAttribute('data-idx') !== null) { _onHover(parseInt(el.getAttribute('data-idx'),10)); return; }
+                    if (el.getAttribute('data-idx') !== null) { _onHover(parseInt(el.getAttribute('data-idx'),10), false); return; }
                     el = el.parentNode;
                 }
             };
@@ -1205,7 +1395,13 @@
         }
 
         // ── Global dismiss ────────────────────────────────────────────────────
-        map.on('click', function() { _clearSelection(); _hideCtxMenu(); });
+        map.on('click', function(e) {
+            if (_measMode) { _measClick(e.latlng.lat, e.latlng.lng); return; }
+            _clearSelection(); _hideCtxMenu();
+        });
+        map.on('contextmenu', function(e) {
+            if (_measMode && _measVerts.length >= 2) { L.DomEvent.stop(e); _measFinish(); }
+        });
 
         document.addEventListener('keydown', function(e) {
             var esc = (e.key || e.keyCode) === 'Escape' || (e.key || e.keyCode) === 27;
@@ -1223,6 +1419,11 @@
         document.addEventListener('click', function(e) {
             var t = e.target || e.srcElement;
             var menu = document.getElementById('ctx-menu');
+            // If click originated inside ctx-menu, skip modal-dismiss so the modal
+            // opened by a menu item click isn't immediately closed by this same event.
+            var inMenu = false, n0 = t;
+            while (n0) { if (n0 === menu) { inMenu = true; break; } n0 = n0.parentNode; }
+            if (inMenu) { return; }
             if (menu.style.display === 'block') {
                 var n = t;
                 while (n) { if (n === menu) { return; } n = n.parentNode; }
@@ -1237,9 +1438,199 @@
             }
         });
 
+        // ── Python callback queue (polled by Python every 150 ms) ────────────────
+        var _cbQueue = [];
+        function _callPython(action, data) { _cbQueue.push(action + '|' + JSON.stringify(data)); }
+        function dequeueCallback() { return _cbQueue.length ? _cbQueue.shift() : ''; }
+
+        // ── Default view (called by Python after load) ────────────────────────
+        function setDefaultView(lat, lon, zoom) {
+            map.setView([parseFloat(lat), parseFloat(lon)], parseInt(zoom));
+        }
+
+        // ── UI scale (called by Python when font-size setting changes) ─────────
+        // s = 0.82 (small) | 1.0 (medium) | 1.22 (large) — matches WPF LayoutTransform
+        function setUIScale(s) {
+            var ss = parseFloat(s) || 1;
+            _uiScale = ss;   // compass reads this next time the tooltip is shown
+
+            // ── Toggle button
+            var tb = document.getElementById('toggle-btn');
+            if (tb) {
+                tb.style.fontSize     = Math.round(15 * ss) + 'px';
+                tb.style.padding      = Math.round(9 * ss) + 'px ' + Math.round(20 * ss) + 'px';
+                tb.style.borderRadius = Math.round(6 * ss) + 'px';
+            }
+
+            // ── Point panel — keep below the (now scaled) toggle button
+            var btnH   = Math.round(ss * 41);  // button height at medium ≈ 41px
+            var panTop = 10 + btnH + 6;
+            var pp = document.getElementById('point-panel');
+            if (pp) {
+                pp.style.top    = panTop + 'px';
+                pp.style.height = 'calc(100vh - ' + (panTop + 24) + 'px)';
+            }
+
+            // ── Measure toolbox
+            var mt = document.getElementById('meas-tool');
+            if (mt) {
+                mt.style.padding      = Math.round(8 * ss) + 'px ' + Math.round(13 * ss) + 'px';
+                mt.style.gap          = Math.round(9 * ss) + 'px';
+                mt.style.borderRadius = Math.round(10 * ss) + 'px';
+            }
+            var mh = document.getElementById('meas-handle');
+            if (mh) { mh.style.fontSize = Math.round(15 * ss) + 'px'; }
+            var mdb = document.getElementById('meas-dist-btn');
+            if (mdb) { mdb.style.fontSize = Math.round(22 * ss) + 'px'; }
+            var mab = document.getElementById('meas-area-btn');
+            if (mab) { mab.style.fontSize = Math.round(22 * ss) + 'px'; }
+            var mcb = document.getElementById('meas-clear-btn');
+            if (mcb) { mcb.style.fontSize = Math.round(18 * ss) + 'px'; }
+            var mr = document.getElementById('meas-result');
+            if (mr) { mr.style.fontSize = Math.round(15 * ss) + 'px'; }
+
+            // ── Tooltip — inject/replace a <style> block (IE11-safe, no CSS vars)
+            var sId = 'ui-scale-style';
+            var old = document.getElementById(sId);
+            if (old) { old.parentNode.removeChild(old); }
+            var st = document.createElement('style');
+            st.id  = sId;
+            st.innerHTML =
+                '#map-tooltip { padding:' + Math.round(13*ss) + 'px ' + Math.round(17*ss) + 'px !important;' +
+                               ' min-width:' + Math.round(300*ss) + 'px !important;' +
+                               ' border-radius:' + Math.round(10*ss) + 'px !important; }' +
+                '.tt-header { font-size:' + Math.round(16*ss) + 'px !important; }' +
+                '.tt-time   { font-size:' + Math.round(14*ss) + 'px !important; }' +
+                '.tt-coord  { font-size:' + Math.round(13*ss) + 'px !important; }' +
+                '.tt-ele    { font-size:' + Math.round(13*ss) + 'px !important; }' +
+                '.tt-label  { font-size:' + Math.round(13*ss) + 'px !important; width:' + Math.round(62*ss) + 'px !important; }' +
+                '.tt-val    { font-size:' + Math.round(14*ss) + 'px !important; }';
+            document.head.appendChild(st);
+        }
+
+        // ── Measure toolbox — drag support ────────────────────────────────────
+        (function() {
+            var el = document.getElementById('meas-tool');
+            var dragging = false, ox, oy, sx, sy;
+            el.addEventListener('mousedown', function(e) {
+                if (e.target.tagName === 'BUTTON') return;
+                dragging = true;
+                var r = el.getBoundingClientRect();
+                ox = r.left; oy = r.top;
+                sx = e.clientX; sy = e.clientY;
+                el.style.bottom = ''; el.style.right = '';
+                el.style.left = ox + 'px'; el.style.top = oy + 'px';
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!dragging) return;
+                el.style.left = (ox + e.clientX - sx) + 'px';
+                el.style.top  = (oy + e.clientY - sy) + 'px';
+            });
+            document.addEventListener('mouseup', function() { dragging = false; });
+        })();
+
+        // ── Measurement state ─────────────────────────────────────────────────
+        var _measMode   = null;   // null | 'dist' | 'area'
+        var _measVerts  = [];     // [[lat, lon], ...]
+        var _measLayers = [];     // Leaflet layers to remove on clear
+
+        function startMeasure(mode) {
+            clearMeasure();
+            _measMode = mode;
+            document.getElementById('meas-dist-btn').className = (mode === 'dist') ? 'active' : '';
+            document.getElementById('meas-area-btn').className = (mode === 'area') ? 'active' : '';
+            document.getElementById('meas-clear-btn').style.display = 'inline';
+            document.getElementById('meas-result').innerHTML = 'Click to start';
+        }
+
+        function clearMeasure() {
+            for (var i = 0; i < _measLayers.length; i++) { map.removeLayer(_measLayers[i]); }
+            _measLayers = [];
+            _measVerts  = [];
+            _measMode   = null;
+            document.getElementById('meas-dist-btn').className = '';
+            document.getElementById('meas-area-btn').className = '';
+            document.getElementById('meas-result').innerHTML = '';
+            document.getElementById('meas-clear-btn').style.display = 'none';
+        }
+
+        function _measClick(lat, lng) {
+            _measVerts.push([lat, lng]);
+            _measRedraw(false);
+        }
+
+        function _measFinish() {
+            if (!_measMode || _measVerts.length < 2) return;
+            var closed = (_measMode === 'area' && _measVerts.length >= 3);
+            _measRedraw(closed);
+            document.getElementById('meas-result').innerHTML =
+                closed ? _formatArea(_calcAreaM2()) : _formatDist(_totalDist());
+            _measMode = null;
+            document.getElementById('meas-dist-btn').className = '';
+            document.getElementById('meas-area-btn').className = '';
+        }
+
+        function _measRedraw(closed) {
+            for (var i = 0; i < _measLayers.length; i++) { map.removeLayer(_measLayers[i]); }
+            _measLayers = [];
+            if (_measVerts.length === 0) return;
+            var color = (_measMode === 'area') ? '#A78BFA' : '#F59E0B';
+            var coords = closed ? _measVerts.concat([_measVerts[0]]) : _measVerts.slice();
+            var line = L.polyline(coords, { color: color, weight: 2.5, dashArray: '5,4', opacity: 0.9 }).addTo(map);
+            _measLayers.push(line);
+            if (closed) {
+                var fill = L.polygon(_measVerts, { color: color, fillColor: color, fillOpacity: 0.08, weight: 0 }).addTo(map);
+                _measLayers.push(fill);
+            }
+            for (var j = 0; j < _measVerts.length; j++) {
+                var dot = L.circleMarker(_measVerts[j], {
+                    radius: 4, color: color, fillColor: color, fillOpacity: 0.9, weight: 1.5
+                }).addTo(map);
+                _measLayers.push(dot);
+            }
+            if (_measVerts.length >= 2) {
+                document.getElementById('meas-result').innerHTML =
+                    (_measMode === 'area' && _measVerts.length >= 3)
+                        ? _formatArea(_calcAreaM2())
+                        : _formatDist(_totalDist());
+            }
+        }
+
+        function _haversineM(a, b) {
+            var R = 6371000;
+            var dLat = (b[0] - a[0]) * Math.PI / 180;
+            var dLon = (b[1] - a[1]) * Math.PI / 180;
+            var lat1 = a[0] * Math.PI / 180, lat2 = b[0] * Math.PI / 180;
+            var s = Math.sin(dLat/2)*Math.sin(dLat/2) +
+                    Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+        }
+        function _totalDist() {
+            var d = 0;
+            for (var i = 1; i < _measVerts.length; i++) { d += _haversineM(_measVerts[i-1], _measVerts[i]); }
+            return d;
+        }
+        function _calcAreaM2() {
+            var n = _measVerts.length, R = 6371000, sum = 0;
+            for (var i = 0; i < n; i++) {
+                var j  = (i + 1) % n;
+                var lo1 = _measVerts[i][1] * Math.PI / 180;
+                var lo2 = _measVerts[j][1] * Math.PI / 180;
+                var la1 = _measVerts[i][0] * Math.PI / 180;
+                var la2 = _measVerts[j][0] * Math.PI / 180;
+                sum += (lo2 - lo1) * (2 + Math.sin(la1) + Math.sin(la2));
+            }
+            return Math.abs(sum) * R * R / 2;
+        }
+        function _formatDist(m)  { return m >= 1000 ? (m/1000).toFixed(2)+' km' : Math.round(m)+' m'; }
+        function _formatArea(m2) { return m2 >= 1e6 ? (m2/1e6).toFixed(2)+' km²' : Math.round(m2)+' m²'; }
+
         // ── Python bridge — called via InvokeScript ───────────────────────────
         function getModifiedPts() { return JSON.stringify(_allPts); }
         function getSplitIdx()    { return String(_splitIdx); }
+        function getMapView()   { var c = map.getCenter(); return JSON.stringify({ lat: c.lat, lon: c.lng, zoom: map.getZoom() }); }
+        function getMapBounds() { var b = map.getBounds(); return JSON.stringify({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest(), zoom: map.getZoom() }); }
 
         // ── Help modal ────────────────────────────────────────────────────────
         function openHelp()  { document.getElementById('help-overlay').style.display = 'block'; }

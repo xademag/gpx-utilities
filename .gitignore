@@ -9,6 +9,9 @@ __pycache__/
 dist/
 build/
 
+# Build cache (portable build script temp files in %TEMP% are external)
+*.zip
+
 # IDE
 .vscode/
 .idea/
@@ -19,6 +22,9 @@ build/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Tile cache (downloaded map tiles — can be large)
+tiles_cache/
 
 # GPX test files (optional — remove if you want to track samples)
 *.gpx
