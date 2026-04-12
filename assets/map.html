@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+    <title>Map</title>
+    <style>
+        html, body, #map {
+            margin: 0; padding: 0;
+            height: 100%; width: 100%;
+            font-family: -apple-system, 'Segoe UI', sans-serif;
+        }
+
+        /* ── Toggle button ───────────────────────────── */
+        #toggle-btn {
+            display: none;
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 1001;
+            background: #18181B;
+            color: #FAFAFA;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        #toggle-btn:hover { background: #27272A; }
+
+        /* ── Floating panel ──────────────────────────── */
+        #point-panel {
+            display: none;
+            position: absolute;
+            top: 46px; right: 10px;
+            z-index: 1000;
+            width: 420px;
+            height: calc(100vh - 70px);
+            background: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            border: 1px solid #E4E4E7;
+            overflow: hidden;
+        }
+        #panel-header {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 40px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 14px;
+            border-bottom: 1px solid #E4E4E7;
+            background: #FAFAFA;
+            box-sizing: border-box;
+        }
+        #panel-header span { font-size: 12px; font-weight: 600; color: #18181B; }
+        #panel-close {
+            background: none; border: 1px solid #D4D4D8; border-radius: 4px;
+            width: 22px; height: 22px; cursor: pointer;
+            font-size: 11px; color: #71717A; line-height: 20px; text-align: center; padding: 0;
+        }
+        #panel-close:hover { background: #F4F4F5; }
+        #col-header {
+            position: absolute;
+            top: 40px; left: 0; right: 0; height: 28px;
+            display: flex; align-items: center;
+            padding: 0 10px;
+            border-bottom: 1px solid #E4E4E7;
+            background: #F9F9F9;
+            font-size: 10px; font-weight: 600; color: #A1A1AA; text-transform: uppercase;
+            box-sizing: border-box;
+        }
+        .ch { overflow: hidden; white-space: nowrap; }
+        #pt-list {
+            position: absolute;
+            top: 68px; bottom: 0; left: 0; right: 0;
+            overflow-y: scroll;
+        }
+
+        /* ── Point rows ──────────────────────────────── */
+        .pt-row {
+            display: flex; align-items: center;
+            padding: 4px 10px;
+            border-bottom: 1px solid #F4F4F5;
+            cursor: pointer; font-size: 11px; color: #3F3F46;
+            box-sizing: border-box;
+        }
+        .pt-row:last-child { border-bottom: none; }
+        .pt-row-hover  { background: #FFF7ED !important; }
+        .pt-row-anchor { background: #FED7AA !important; border-left: 3px solid #EA580C; padding-left: 7px; }
+        .pt-row-sel    { background: #FFF7ED !important; border-left: 3px solid #F59E0B; padding-left: 7px; }
+
+        /* ── Segment divider row ─────────────────────── */
+        .seg-divider {
+            display: flex; align-items: center;
+            padding: 4px 10px;
+            background: #F4F4F5;
+            border-top: 2px solid #7C3AED;
+            border-bottom: 2px solid #7C3AED;
+            font-size: 10px; font-weight: 600;
+            color: #7C3AED; text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Column widths ───────────────────────────── */
+        .c-idx   { width: 38px;  flex-shrink: 0; color: #A1A1AA; font-size: 10px; text-align: right; padding-right: 8px; }
+        .c-time  { width: 64px;  flex-shrink: 0; color: #52525B; }
+        .c-dist  { width: 54px;  flex-shrink: 0; color: #2563EB; font-weight: 600; }
+        .c-gap   { width: 50px;  flex-shrink: 0; color: #52525B; }
+        .c-speed { width: 52px;  flex-shrink: 0; color: #16A34A; font-weight: 600; }
+        .c-coord { flex: 1;      color: #18181B; white-space: nowrap; overflow: hidden; }
+
+        /* ── Context menu ────────────────────────────── */
+        #ctx-menu {
+            display: none;
+            position: fixed;
+            z-index: 3000;
+            background: #FFFFFF;
+            border: 1px solid #E4E4E7;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+            min-width: 190px;
+            padding: 4px 0;
+            user-select: none;
+        }
+        .ctx-label {
+            padding: 6px 14px 4px;
+            font-size: 10px; font-weight: 600;
+            color: #A1A1AA; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .ctx-item {
+            padding: 8px 14px;
+            font-size: 13px; color: #18181B;
+            cursor: pointer;
+        }
+        .ctx-item:hover { background: #F4F4F5; }
+        .ctx-danger { color: #DC2626; }
+        .ctx-danger:hover { background: #FEF2F2 !important; }
+        .ctx-divider { height: 1px; background: #E4E4E7; margin: 4px 0; }
+
+        /* ── Help button ─────────────────────────────── */
+        #help-btn {
+            position: absolute;
+            bottom: 30px; left: 10px;
+            z-index: 1001;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 2px solid #D4D4D8;
+            color: #52525B;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            line-height: 28px; text-align: center; padding: 0;
+        }
+        #help-btn:hover { background: #F4F4F5; border-color: #A1A1AA; }
+
+        /* ── Help modal ──────────────────────────────── */
+        #help-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            background: rgba(0,0,0,0.45);
+        }
+        #help-box {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            width: 540px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 28px 32px 24px;
+            box-sizing: border-box;
+        }
+        #help-box h2 {
+            margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #18181B;
+        }
+        #help-box .help-sub {
+            font-size: 11px; color: #A1A1AA; margin: 0 0 20px;
+        }
+        .help-section { margin-bottom: 18px; }
+        .help-section h3 {
+            font-size: 10px; font-weight: 700; color: #A1A1AA;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            margin: 0 0 8px;
+        }
+        .help-row {
+            display: flex; gap: 12px;
+            font-size: 12px; color: #3F3F46;
+            margin-bottom: 6px; line-height: 1.45;
+        }
+        .help-key {
+            flex-shrink: 0; width: 130px;
+            font-weight: 600; color: #18181B;
+        }
+        .help-desc { flex: 1; }
+        .help-tag {
+            display: inline-block;
+            background: #F4F4F5; border: 1px solid #E4E4E7;
+            border-radius: 4px; padding: 1px 6px;
+            font-size: 11px; color: #52525B;
+            font-family: monospace;
+        }
+        #help-close-row {
+            text-align: right; margin-top: 20px; padding-top: 16px;
+            border-top: 1px solid #E4E4E7;
+        }
+        #help-close-btn {
+            background: #18181B; color: #FAFAFA;
+            border: none; border-radius: 6px;
+            padding: 8px 20px; font-size: 13px; font-weight: 600;
+            cursor: pointer;
+        }
+        #help-close-btn:hover { background: #27272A; }
+
+        /* ── Status bar ──────────────────────────────── */
+        #status-bar {
+            display: none;
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            z-index: 1001;
+            background: rgba(24,24,27,0.82);
+            color: #FAFAFA;
+            font-size: 11.5px;
+            padding: 5px 90px 5px 14px;
+            pointer-events: none;
+            white-space: nowrap;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+        #status-sep { color: rgba(255,255,255,0.2); margin: 0 14px; }
+
+        /* ── Modal dialog ────────────────────────────── */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 5000;
+            background: rgba(0,0,0,0.4);
+        }
+        #modal-box {
+            position: absolute;
+            top: 50%; left: 50%;
+            -ms-transform: translate(-50%,-50%);
+            transform: translate(-50%,-50%);
+            background: #FFFFFF;
+            border-radius: 10px;
+            box-shadow: 0 10px 32px rgba(0,0,0,0.22);
+            width: 340px;
+            padding: 22px 24px 18px;
+            box-sizing: border-box;
+        }
+        #modal-title { font-size: 14px; font-weight: 700; color: #18181B; margin: 0 0 14px; }
+        .modal-field { margin-bottom: 12px; }
+        .modal-label {
+            display: block; font-size: 10px; font-weight: 700; color: #52525B;
+            text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
+        }
+        .modal-input {
+            width: 100%; box-sizing: border-box; padding: 7px 10px;
+            font-size: 13px; font-family: monospace;
+            border: 1px solid #D4D4D8; border-radius: 6px; outline: none;
+        }
+        .modal-input:focus { border-color: #2563EB; }
+        .modal-hint { font-size: 10px; color: #A1A1AA; margin-top: 4px; }
+        .modal-radio { display: block; font-size: 12.5px; color: #3F3F46; margin-bottom: 5px; cursor: pointer; }
+        #modal-footer {
+            text-align: right; margin-top: 16px;
+            padding-top: 14px; border-top: 1px solid #E4E4E7;
+        }
+        #modal-cancel {
+            background: #F4F4F5; color: #18181B; border: none; border-radius: 6px;
+            padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 8px;
+        }
+        #modal-cancel:hover { background: #E4E4E7; }
+        #modal-ok {
+            background: #18181B; color: #FAFAFA; border: none; border-radius: 6px;
+            padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        #modal-ok:hover { background: #27272A; }
+
+        /* ── Map hover tooltip ───────────────────────── */
+        #map-tooltip {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            background: rgba(24,24,27,0.93);
+            color: #FAFAFA;
+            border-radius: 8px;
+            padding: 10px 13px;
+            pointer-events: none;
+            min-width: 260px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            line-height: 1.5;
+        }
+        .tt-header  { font-size: 12px; font-weight: 700; margin-bottom: 1px; }
+        .tt-time    { font-weight: 400; color: #A1A1AA; margin-left: 8px; font-size: 11px; }
+        .tt-coord   { color: #D4D4D8; font-size: 10.5px; margin-bottom: 2px; }
+        .tt-ele     { color: #A1A1AA; font-size: 10.5px; }
+        .tt-divider { height: 1px; background: rgba(255,255,255,0.12); margin: 7px 0 6px; }
+        .tt-grid    { display: table; width: 100%; }
+        .tt-row     { display: table-row; }
+        .tt-label   { display: table-cell; color: #A1A1AA; font-size: 10px; padding-right: 8px; width: 52px; }
+        .tt-val     { display: table-cell; font-size: 11px; font-weight: 600; color: #FAFAFA; }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=" crossorigin=""></script>
+</head>
+<body>
+    <div id="map"></div>
+
+    <button id="toggle-btn" onclick="togglePanel()">
+        Points <span id="toggle-count"></span>
+    </button>
+
+    <div id="point-panel">
+        <div id="panel-header">
+            <span>Track Points &nbsp;<span id="pt-count" style="color:#71717A;font-weight:400;"></span></span>
+            <button id="panel-close" onclick="togglePanel()">&#x2715;</button>
+        </div>
+        <div id="col-header">
+            <span class="ch c-idx">#</span>
+            <span class="ch c-time">Time</span>
+            <span class="ch c-dist">Total</span>
+            <span class="ch c-gap">+Dist</span>
+            <span class="ch c-speed">Speed</span>
+            <span class="ch c-coord">Lat / Lon</span>
+        </div>
+        <div id="pt-list"></div>
+    </div>
+
+    <!-- Map hover tooltip -->
+    <div id="map-tooltip"></div>
+
+    <!-- Status bar -->
+    <div id="status-bar">
+        <span id="status-total"></span>
+        <span id="status-sep" style="display:none;">&#124;</span>
+        <span id="status-sel"></span>
+    </div>
+
+    <!-- Modal dialog -->
+    <div id="modal-overlay">
+        <div id="modal-box">
+            <div id="modal-title"></div>
+            <div id="modal-body"></div>
+            <div id="modal-footer">
+                <button id="modal-cancel" onclick="closeModal()">Cancel</button>
+                <button id="modal-ok" onclick="_modalOk()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help button -->
+    <button id="help-btn" onclick="openHelp()">?</button>
+
+    <!-- Help modal -->
+    <div id="help-overlay" onclick="closeHelp()">
+        <div id="help-box" onclick="event.stopPropagation ? event.stopPropagation() : (event.cancelBubble=true)">
+            <h2>GPX Utility — How to use</h2>
+            <p class="help-sub">Load, inspect, edit and save GPX tracks.</p>
+
+            <div class="help-section">
+                <h3>File</h3>
+                <div class="help-row"><span class="help-key">Load GPX…</span><span class="help-desc">Open a GPX file via the left panel. The track is drawn on the map and stats are computed.</span></div>
+                <div class="help-row"><span class="help-key">Save GPX…</span><span class="help-desc">Save the modified track (including all edits) to a new GPX file.</span></div>
+            </div>
+
+            <div class="help-section">
+                <h3>Map navigation</h3>
+                <div class="help-row"><span class="help-key">Scroll wheel</span><span class="help-desc">Zoom in / out.</span></div>
+                <div class="help-row"><span class="help-key">Drag</span><span class="help-desc">Pan the map.</span></div>
+            </div>
+
+            <div class="help-section">
+                <h3>Point list</h3>
+                <div class="help-row"><span class="help-key"><span class="help-tag">Points (N)</span> button</span><span class="help-desc">Toggle the floating points panel. Columns: index, time, cumulative distance, gap from previous point, speed, coordinates.</span></div>
+            </div>
+
+            <div class="help-section">
+                <h3>Hover (bidirectional)</h3>
+                <div class="help-row"><span class="help-key">Mouse over track</span><span class="help-desc">Yellow dot appears on the nearest point; corresponding row is highlighted in the list.</span></div>
+                <div class="help-row"><span class="help-key">Mouse over list row</span><span class="help-desc">Yellow dot moves to that point on the map.</span></div>
+            </div>
+
+            <div class="help-section">
+                <h3>Selection</h3>
+                <div class="help-row"><span class="help-key">Click track or row</span><span class="help-desc">Sets the <strong>anchor</strong> point (orange dot, dark border on row). Click again to deselect.</span></div>
+                <div class="help-row"><span class="help-key"><span class="help-tag">Shift</span> + click</span><span class="help-desc">Extends the selection to a <strong>range</strong> from the anchor to the clicked point. The segment is highlighted in orange on the map.</span></div>
+                <div class="help-row"><span class="help-key">Map background click</span><span class="help-desc">Clears the selection.</span></div>
+            </div>
+
+            <div class="help-section">
+                <h3>Context menu <span style="font-weight:400;color:#A1A1AA">(right-click selected segment)</span></h3>
+                <div class="help-row"><span class="help-key">Delete</span><span class="help-desc">Removes the selected points and reconnects the remaining track.</span></div>
+                <div class="help-row"><span class="help-key">Delete and join</span><span class="help-desc">Removes the selected points <em>and</em> subtracts the deleted segment's time duration from all subsequent point timestamps — closes the time gap as if the segment never happened.</span></div>
+                <div class="help-row"><span class="help-key">Split</span><span class="help-desc">Deletes the selected points and splits the remaining track into two separate segments (blue + purple). Cannot split at the very start or end.</span></div>
+                <div class="help-row"><span class="help-key">Duplicate</span><span class="help-desc">Inserts a copy of the selected points immediately after the selection, then auto-selects the duplicate.</span></div>
+            </div>
+
+            <div id="help-close-row">
+                <button id="help-close-btn" onclick="closeHelp()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context menu -->
+    <div id="ctx-menu">
+        <div class="ctx-label">Selection</div>
+        <div class="ctx-item ctx-danger" onclick="ctxDelete()">Delete</div>
+        <div class="ctx-item ctx-danger" onclick="ctxDeleteJoin()">Delete and join</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" onclick="ctxSplit()">Split</div>
+        <div class="ctx-item" onclick="ctxDuplicate()">Duplicate</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" onclick="ctxChangeStartTime()">Change start time&#8230;</div>
+        <div class="ctx-item" onclick="ctxIncreaseSpeed()">Increase speed&#8230;</div>
+    </div>
+
+    <script>
+        var map = L.map('map').setView([48.8566, 2.3522], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // ── Track data ────────────────────────────────────────────────────────
+        // _allPts: flat array of all points. _splitIdx >= 0 means the track is
+        // visually split: segment A = [0.._splitIdx], segment B = [_splitIdx+1..end]
+        var _allPts   = [];
+        var _splitIdx = -1;   // -1 = unsplit
+
+        // ── Polylines ─────────────────────────────────────────────────────────
+        var _track    = null;
+        var _track2   = null;   // second segment after split
+        var _selPoly  = null;   // orange selection overlay
+        var _markers  = [];
+
+        // ── Hover / selection state ───────────────────────────────────────────
+        var _hoverIdx  = -1;
+        var _anchorIdx = -1;
+        var _selEnd    = -1;
+        var _panelOpen = false;
+        var _rafPending = false;
+        var _mouseX = 0, _mouseY = 0;
+
+        // Per-point precomputed stats
+        var _cumDist = [], _gapDist = [], _speed = [], _bearings = [];
+
+        // Direction arrows
+        var _arrows = [];
+
+        // ── Map dots ──────────────────────────────────────────────────────────
+        var _hoverDot = L.circleMarker([0,0], {
+            radius: 6, color: '#F59E0B', fillColor: '#FDE68A',
+            fillOpacity: 0, opacity: 0, weight: 2, interactive: false
+        });
+        var _anchorDot = L.circleMarker([0,0], {
+            radius: 8, color: '#EA580C', fillColor: '#F97316',
+            fillOpacity: 0, opacity: 0, weight: 2.5, interactive: false
+        });
+        var _endDot = L.circleMarker([0,0], {
+            radius: 8, color: '#EA580C', fillColor: '#F97316',
+            fillOpacity: 0, opacity: 0, weight: 2.5, interactive: false
+        });
+
+        // ── Utilities ─────────────────────────────────────────────────────────
+        function _haversine(lat1, lon1, lat2, lon2) {
+            var R    = 6371000;
+            var dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+            var a    = Math.sin(dLat/2)*Math.sin(dLat/2)
+                     + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)
+                     * Math.sin(dLon/2)*Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+        function _epoch(iso) {
+            if (!iso) { return null; }
+            var d = new Date(iso); return isNaN(d.getTime()) ? null : d.getTime();
+        }
+        function _fmtTime(iso) {
+            if (!iso) { return ''; }
+            var m = iso.match(/T(\d{2}:\d{2}:\d{2})/); return m ? m[1] : '';
+        }
+        function _fmtDist(m) {
+            return m >= 1000 ? (m/1000).toFixed(2)+' km' : m.toFixed(0)+' m';
+        }
+
+        // ── Direction arrows ──────────────────────────────────────────────────
+
+        function _bearing(lat1, lon1, lat2, lon2) {
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+            var y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+            var x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180)
+                  - Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+            return Math.atan2(y, x) * 180 / Math.PI; // 0=N, 90=E, clockwise
+        }
+
+        function _clearArrows() {
+            for (var i = 0; i < _arrows.length; i++) { map.removeLayer(_arrows[i]); }
+            _arrows = [];
+        }
+
+        function _drawArrows(pts) {
+            _clearArrows();
+            if (pts.length < 2) { return; }
+
+            var STEP = 50, OFFSET = 25; // first arrow at pt 25, then 75, 125 …
+
+            for (var i = OFFSET; i < pts.length - 1; i += STEP) {
+                var p1 = pts[i], p2 = pts[i + 1];
+                var b  = _bearing(p1.lat, p1.lon, p2.lat, p2.lon);
+
+                // Match segment colour (blue / purple after split)
+                var fill = (_splitIdx >= 0 && i > _splitIdx) ? '#7C3AED' : '#1D4ED8';
+
+                // Simple filled triangle pointing north (up) at 0°, rotated by bearing.
+                var svg =
+                    '<svg width="22" height="22" viewBox="0 0 22 22" ' +
+                         'style="display:block;transform:rotate(' + b.toFixed(1) + 'deg)">' +
+                        '<polygon points="11,1 21,21 1,21" ' +
+                                 'fill="' + fill + '" opacity="0.9"/>' +
+                    '</svg>';
+
+                var icon = L.divIcon({
+                    html:       svg,
+                    iconSize:   [22, 22],
+                    iconAnchor: [11, 11],
+                    className:  ''
+                });
+
+                _arrows.push(
+                    L.marker([p1.lat, p1.lon], { icon: icon, interactive: false }).addTo(map)
+                );
+            }
+        }
+
+        // ── Precompute per-point stats (all points, not just shown) ───────────
+        function _precompute(pts) {
+            var n = pts.length;
+            _cumDist = new Array(n); _gapDist = new Array(n); _speed = new Array(n);
+            _bearings = new Array(n);
+            _cumDist[0] = 0; _gapDist[0] = 0; _speed[0] = null;
+            _bearings[0] = n > 1 ? _bearing(pts[0].lat, pts[0].lon, pts[1].lat, pts[1].lon) : 0;
+            for (var i = 1; i < n; i++) {
+                var d  = _haversine(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
+                var t0 = _epoch(pts[i-1].time), t1 = _epoch(pts[i].time);
+                _cumDist[i] = _cumDist[i-1] + d;
+                _gapDist[i] = d;
+                _speed[i]   = (t0 !== null && t1 !== null && t1 > t0)
+                    ? (d/1000) / ((t1-t0)/3600000) : null;
+                _bearings[i] = _bearing(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon);
+            }
+        }
+
+        function _compassSvg(b) {
+            var deg = Math.round(((b % 360) + 360) % 360);
+            var cx = 28, cy = 28, r = 24;
+            var ticks = '';
+            for (var t = 0; t < 360; t += 30) {
+                var rad = (t - 90) * Math.PI / 180;
+                var inner = t % 90 === 0 ? r - 7 : r - 4;
+                var x1 = cx + r * Math.cos(rad), y1 = cy + r * Math.sin(rad);
+                var x2 = cx + inner * Math.cos(rad), y2 = cy + inner * Math.sin(rad);
+                ticks += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+
+                         '" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+
+                         '" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>';
+            }
+            var labels = [
+                {l:'N', a:0},  {l:'E', a:90}, {l:'S', a:180}, {l:'W', a:270}
+            ];
+            var ltext = '';
+            labels.forEach(function(lv) {
+                var rad = (lv.a - 90) * Math.PI / 180;
+                var lx = cx + (r - 10) * Math.cos(rad);
+                var ly = cy + (r - 10) * Math.sin(rad) + 3.5;
+                var col = lv.l === 'N' ? '#FB923C' : 'rgba(255,255,255,0.55)';
+                ltext += '<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+
+                         '" text-anchor="middle" font-size="7" font-weight="700" fill="'+col+'">'+lv.l+'</text>';
+            });
+            var nRad = (b - 90) * Math.PI / 180;
+            var sRad = (b + 90) * Math.PI / 180;
+            var needleLen = r - 9;
+            var nx = cx + needleLen * Math.cos(nRad), ny = cy + needleLen * Math.sin(nRad);
+            var sx = cx + needleLen * Math.cos(sRad), sy = cy + needleLen * Math.sin(sRad);
+            var perpRad = (b) * Math.PI / 180;
+            var pw = 3;
+            var px = pw * Math.cos(perpRad), py = pw * Math.sin(perpRad);
+            var needle =
+                '<polygon points="'+nx.toFixed(1)+','+ny.toFixed(1)+' '+
+                (cx+px).toFixed(1)+','+(cy+py).toFixed(1)+' '+
+                sx.toFixed(1)+','+sy.toFixed(1)+' '+
+                (cx-px).toFixed(1)+','+(cy-py).toFixed(1)+
+                '" fill="#FB923C" opacity="0.9"/>'+
+                '<polygon points="'+sx.toFixed(1)+','+sy.toFixed(1)+' '+
+                (cx+px).toFixed(1)+','+(cy+py).toFixed(1)+' '+
+                nx.toFixed(1)+','+ny.toFixed(1)+' '+
+                (cx-px).toFixed(1)+','+(cy-py).toFixed(1)+
+                '" fill="rgba(255,255,255,0.4)" opacity="0.9" clip-path="url(#chalf)"/>';
+            return '<svg width="56" height="62" xmlns="http://www.w3.org/2000/svg">'+
+                '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>'+
+                ticks + ltext + needle +
+                '<circle cx="'+cx+'" cy="'+cy+'" r="2.5" fill="#FAFAFA" opacity="0.8"/>'+
+                '<text x="'+cx+'" y="58" text-anchor="middle" font-size="9" font-weight="600" fill="rgba(255,255,255,0.75)">'+deg+'°</text>'+
+                '</svg>';
+        }
+
+        // ── Map hover tooltip ─────────────────────────────────────────────────
+        function _showTooltip(idx) {
+            if (idx < 0 || idx >= _allPts.length) { return; }
+            var p   = _allPts[idx];
+            var cum = _cumDist.length > idx ? _cumDist[idx] : null;
+            var gap = (_gapDist.length > idx && idx > 0) ? _gapDist[idx] : null;
+            var spd = (_speed.length   > idx) ? _speed[idx]   : null;
+
+            var rows = '';
+            if (cum  !== null) { rows += '<div class="tt-row"><span class="tt-label">Total</span><span class="tt-val">'+_fmtDist(cum)+'</span></div>'; }
+            if (gap  !== null) { rows += '<div class="tt-row"><span class="tt-label">+Dist</span><span class="tt-val">'+_fmtDist(gap)+'</span></div>'; }
+            if (spd  !== null) { rows += '<div class="tt-row"><span class="tt-label">Speed</span><span class="tt-val">'+spd.toFixed(1)+' km/h</span></div>'; }
+
+            var compass = (_bearings.length > idx)
+                ? '<td style="vertical-align:middle;padding-left:10px;">'+_compassSvg(_bearings[idx])+'</td>'
+                : '';
+            var textCell =
+                '<div class="tt-header">#'+(idx+1)+
+                    (p.time ? '<span class="tt-time">'+_fmtTime(p.time)+'</span>' : '')+
+                '</div>'+
+                '<div class="tt-coord">'+p.lat.toFixed(6)+', '+p.lon.toFixed(6)+'</div>'+
+                (p.ele != null ? '<div class="tt-ele">Elevation: '+p.ele.toFixed(0)+' m</div>' : '')+
+                (rows ? '<div class="tt-divider"></div><div class="tt-grid">'+rows+'</div>' : '');
+            var html = compass
+                ? '<table style="border-collapse:collapse;"><tr><td style="vertical-align:top;">'+textCell+'</td>'+compass+'</tr></table>'
+                : textCell;
+
+            var el = document.getElementById('map-tooltip');
+            el.innerHTML = html;
+            el.style.display = 'block';
+            _positionTooltip(el);
+        }
+
+        function _hideTooltip() {
+            document.getElementById('map-tooltip').style.display = 'none';
+        }
+
+        function _positionTooltip(el) {
+            var x = _mouseX, y = _mouseY;
+            var w = el.offsetWidth  || 210;
+            var h = el.offsetHeight || 110;
+            var tx = x + 16, ty = y - h - 12;
+            if (tx + w > window.innerWidth  - 8) { tx = x - w - 16; }
+            if (ty < 8)                          { ty = y + 20; }
+            el.style.left = tx + 'px';
+            el.style.top  = ty + 'px';
+        }
+
+        function _nearestIdx(lat, lon) {
+            var best = 0, bestD = Infinity;
+            for (var i = 0; i < _allPts.length; i++) {
+                var dlat = _allPts[i].lat-lat, dlon = _allPts[i].lon-lon;
+                var d = dlat*dlat + dlon*dlon;
+                if (d < bestD) { bestD = d; best = i; }
+            }
+            return best;
+        }
+        function _selMin() { return Math.min(_anchorIdx, _selEnd < 0 ? _anchorIdx : _selEnd); }
+        function _selMax() { return Math.max(_anchorIdx, _selEnd < 0 ? _anchorIdx : _selEnd); }
+
+        // ── Row class ─────────────────────────────────────────────────────────
+        function _rowClass(idx) {
+            var mn = _anchorIdx < 0 ? -1 : _selMin();
+            var mx = _anchorIdx < 0 ? -1 : _selMax();
+            if (_anchorIdx >= 0 && idx >= mn && idx <= mx) {
+                return idx === _anchorIdx ? 'pt-row pt-row-anchor' : 'pt-row pt-row-sel';
+            }
+            if (idx === _hoverIdx) { return 'pt-row pt-row-hover'; }
+            return 'pt-row';
+        }
+        function _refreshRow(idx) {
+            var el = document.getElementById('r'+idx);
+            if (el) { el.className = _rowClass(idx); }
+        }
+
+        // ── Hover ─────────────────────────────────────────────────────────────
+        function _onHover(idx) {
+            if (idx === _hoverIdx) {
+                // Same point — just reposition tooltip (mouse may have moved)
+                if (idx >= 0) { _positionTooltip(document.getElementById('map-tooltip')); }
+                return;
+            }
+            var prev = _hoverIdx; _hoverIdx = idx;
+            if (prev >= 0) { _refreshRow(prev); }
+            if (idx < 0 || idx >= _allPts.length) {
+                _hoverDot.setStyle({ opacity: 0, fillOpacity: 0 });
+                _hideTooltip();
+                return;
+            }
+            var p = _allPts[idx];
+            _hoverDot.setLatLng([p.lat, p.lon]);
+            _hoverDot.setStyle({ opacity: 1, fillOpacity: 0.85 });
+            _refreshRow(idx);
+            if (_anchorIdx < 0) { _scrollToRow(idx); }
+            _showTooltip(idx);
+        }
+        function _clearHover() { _hideTooltip(); _onHover(-1); }
+        function _scrollToRow(idx) {
+            var el = document.getElementById('r'+idx); if (!el) { return; }
+            var list = document.getElementById('pt-list');
+            var elTop = el.offsetTop, elBot = elTop + el.offsetHeight;
+            var listTop = list.scrollTop, listBot = listTop + list.clientHeight;
+            if (elTop < listTop || elBot > listBot) { list.scrollTop = elTop - list.clientHeight/2; }
+        }
+
+        // ── Selection ─────────────────────────────────────────────────────────
+        function _clearSelection() {
+            if (_anchorIdx < 0) { return; }
+            var mn = _selMin(), mx = _selMax();
+            _anchorIdx = -1; _selEnd = -1;
+            _anchorDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            for (var i = mn; i <= mx; i++) { _refreshRow(i); }
+            _updateStatusBar();
+        }
+
+        function _applySelection() {
+            var mn = _selMin(), mx = _selMax();
+            var pa = _allPts[_anchorIdx];
+            _anchorDot.setLatLng([pa.lat, pa.lon]);
+            _anchorDot.setStyle({ opacity: 1, fillOpacity: 0.95 });
+
+            if (_selEnd >= 0 && _selEnd !== _anchorIdx) {
+                var pe = _allPts[_selEnd];
+                _endDot.setLatLng([pe.lat, pe.lon]);
+                _endDot.setStyle({ opacity: 1, fillOpacity: 0.95 });
+            } else {
+                _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            }
+
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            if (mn !== mx) {
+                var ll = [];
+                for (var i = mn; i <= mx; i++) { ll.push([_allPts[i].lat, _allPts[i].lon]); }
+                _selPoly = L.polyline(ll, { color: '#F97316', weight: 5, opacity: 0.9 }).addTo(map);
+
+                // Right-click on selection segment → context menu
+                _selPoly.on('contextmenu', function(e) {
+                    L.DomEvent.preventDefault(e);
+                    L.DomEvent.stopPropagation(e);
+                    _showCtxMenu(e.originalEvent.clientX, e.originalEvent.clientY);
+                });
+
+                map.fitBounds(_selPoly.getBounds(), { padding: [30, 30] });
+            } else {
+                map.panTo([pa.lat, pa.lon]);
+            }
+
+            for (var i = mn; i <= mx; i++) { _refreshRow(i); }
+            _scrollToRow(_anchorIdx);
+            _updateStatusBar();
+        }
+
+        function _selectPoint(idx, shiftKey) {
+            if (idx < 0 || idx >= _allPts.length) { return; }
+            _hideCtxMenu();
+            if (!shiftKey || _anchorIdx < 0) {
+                var isSingle = _anchorIdx === idx && _selEnd < 0;
+                _clearSelection();
+                if (!isSingle) { _anchorIdx = idx; _selEnd = -1; _applySelection(); }
+            } else {
+                var prevEnd = _selEnd < 0 ? _anchorIdx : _selEnd;
+                var omn = Math.min(_anchorIdx, prevEnd), omx = Math.max(_anchorIdx, prevEnd);
+                for (var i = omn; i <= omx; i++) { _refreshRow(i); }
+                _selEnd = idx;
+                _applySelection();
+            }
+        }
+
+        // ── Redraw polylines ──────────────────────────────────────────────────
+        var SNAP_PX = 40;   // magnet radius in screen pixels
+
+        // Map-level magnet hover — fires everywhere, snaps to nearest point within SNAP_PX
+        map.on('mousemove', function(e) {
+            _mouseX = e.originalEvent.clientX;
+            _mouseY = e.originalEvent.clientY;
+
+            // Reposition tooltip immediately (no throttle)
+            var tt = document.getElementById('map-tooltip');
+            if (tt.style.display === 'block') { _positionTooltip(tt); }
+
+            if (!_allPts.length) { return; }
+            if (_rafPending) { return; }
+            _rafPending = true;
+            var lat = e.latlng.lat, lon = e.latlng.lng;
+            var cx = e.containerPoint.x, cy = e.containerPoint.y;
+            requestAnimationFrame(function() {
+                var idx = _nearestIdx(lat, lon);
+                if (idx >= 0) {
+                    var ptPx = map.latLngToContainerPoint([_allPts[idx].lat, _allPts[idx].lon]);
+                    var dx = ptPx.x - cx, dy = ptPx.y - cy;
+                    _onHover(Math.sqrt(dx * dx + dy * dy) <= SNAP_PX ? idx : -1);
+                }
+                _rafPending = false;
+            });
+        });
+        map.on('mouseout', _clearHover);
+
+        function _attachTrackEvents(poly) {
+            poly.on('click', function(e) {
+                L.DomEvent.stopPropagation(e);
+                _selectPoint(_nearestIdx(e.latlng.lat, e.latlng.lng), e.originalEvent.shiftKey);
+            });
+        }
+
+        function _redrawPolylines() {
+            if (_track)  { map.removeLayer(_track);  _track  = null; }
+            if (_track2) { map.removeLayer(_track2); _track2 = null; }
+
+            if (_splitIdx < 0 || _splitIdx >= _allPts.length - 1) {
+                // Single segment
+                var ll = _allPts.map(function(p) { return [p.lat, p.lon]; });
+                _track = L.polyline(ll, { color: '#2563EB', weight: 5, opacity: 0.8 }).addTo(map);
+                _attachTrackEvents(_track);
+            } else {
+                // Two segments
+                var ll1 = _allPts.slice(0, _splitIdx+1).map(function(p) { return [p.lat, p.lon]; });
+                var ll2 = _allPts.slice(_splitIdx+1).map(function(p) { return [p.lat, p.lon]; });
+                _track  = L.polyline(ll1, { color: '#2563EB', weight: 5, opacity: 0.8 }).addTo(map);
+                _track2 = L.polyline(ll2, { color: '#7C3AED', weight: 5, opacity: 0.8 }).addTo(map);
+                _attachTrackEvents(_track);
+                _attachTrackEvents(_track2);
+            }
+
+            _drawArrows(_allPts);
+        }
+
+        // ── Context menu ──────────────────────────────────────────────────────
+        function _showCtxMenu(x, y) {
+            if (_anchorIdx < 0) { return; }
+            var el = document.getElementById('ctx-menu');
+            el.style.left    = x + 'px';
+            el.style.top     = y + 'px';
+            el.style.display = 'block';
+            // Flip left if overflowing viewport right
+            if (x + 200 > window.innerWidth) { el.style.left = (x - 200) + 'px'; }
+        }
+        function _hideCtxMenu() {
+            document.getElementById('ctx-menu').style.display = 'none';
+        }
+
+        // ── Context menu actions ──────────────────────────────────────────────
+
+        function ctxDelete() {
+            _hideCtxMenu();
+            var mn = _selMin(), mx = _selMax(), count = mx - mn + 1;
+            _allPts.splice(mn, count);
+            if (_splitIdx >= mx)      { _splitIdx -= count; }
+            else if (_splitIdx >= mn) { _splitIdx = mn - 1; }
+            _anchorIdx = -1; _selEnd = -1;
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            _anchorDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _redrawPolylines();
+            _buildPanel(_allPts);
+        }
+
+        function ctxDeleteJoin() {
+            _hideCtxMenu();
+            var mn = _selMin(), mx = _selMax();
+
+            // ── Time-gap correction ───────────────────────────────────────────
+            // Measure the duration of the deleted segment and subtract it from
+            // all timestamps that come after, so the track time is continuous.
+            var tFirst = _epoch(_allPts[mn].time);
+            var tLast  = _epoch(_allPts[mx].time);
+            var delta  = (tFirst !== null && tLast !== null && tLast > tFirst)
+                         ? (tLast - tFirst) : 0;
+
+            // Remove selected points
+            var count = mx - mn + 1;
+            _allPts.splice(mn, count);
+
+            // Shift all subsequent timestamps back by delta
+            if (delta > 0) {
+                for (var i = mn; i < _allPts.length; i++) {
+                    if (_allPts[i].time) {
+                        var t = _epoch(_allPts[i].time);
+                        if (t !== null) {
+                            _allPts[i].time = new Date(t - delta)
+                                .toISOString().replace(/\.\d{3}Z$/, 'Z');
+                        }
+                    }
+                }
+            }
+
+            if (_splitIdx >= mx)      { _splitIdx -= count; }
+            else if (_splitIdx >= mn) { _splitIdx = mn - 1; }
+            _anchorIdx = -1; _selEnd = -1;
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            _anchorDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _redrawPolylines();
+            _buildPanel(_allPts);
+        }
+
+        function ctxSplit() {
+            _hideCtxMenu();
+            var mn = _selMin(), mx = _selMax();
+            // The selection becomes the split boundary.
+            // Segment A ends at mn-1, segment B starts at mx+1.
+            // Points mn..mx are removed.
+            if (mn === 0 || mx === _allPts.length - 1) { return; } // can't split at edges
+            _allPts.splice(mn, mx - mn + 1);
+            // After splice the old mx+1 is now at mn.
+            // Split between mn-1 and mn.
+            _splitIdx = mn - 1;
+            _anchorIdx = -1; _selEnd = -1;
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            _anchorDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _redrawPolylines();
+            _buildPanel(_allPts);
+        }
+
+        function ctxDuplicate() {
+            _hideCtxMenu();
+            var mn = _selMin(), mx = _selMax();
+            var copy = _allPts.slice(mn, mx + 1);
+            // Insert copy immediately after the selection
+            _allPts = _allPts.slice(0, mx + 1).concat(copy).concat(_allPts.slice(mx + 1));
+            if (_splitIdx > mx) { _splitIdx += copy.length; }
+            _anchorIdx = mx + 1;
+            _selEnd    = mx + copy.length;
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            _redrawPolylines();
+            _buildPanel(_allPts);
+            _applySelection(); // highlight the duplicate
+        }
+
+        // ── Status bar ────────────────────────────────────────────────────────
+        function _fmtDuration(ms) {
+            if (!ms || ms <= 0) { return '—'; }
+            var s = Math.round(ms / 1000);
+            var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sc = s % 60;
+            if (h > 0) { return h + 'h ' + m + 'm'; }
+            if (m > 0) { return m + 'm ' + sc + 's'; }
+            return sc + 's';
+        }
+
+        function _updateStatusBar() {
+            var bar = document.getElementById('status-bar');
+            if (!_allPts.length) { bar.style.display = 'none'; return; }
+            bar.style.display = 'block';
+
+            var lbl = '<span style="color:#A1A1AA;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;">';
+            var totalDist = _cumDist.length >= _allPts.length ? _cumDist[_allPts.length - 1] : null;
+            var t0 = _epoch(_allPts[0].time), t1 = _epoch(_allPts[_allPts.length - 1].time);
+            var totalDur = (t0 !== null && t1 !== null) ? t1 - t0 : null;
+            document.getElementById('status-total').innerHTML =
+                lbl + 'Total</span>&nbsp; ' +
+                (totalDist !== null ? _fmtDist(totalDist) : '—') + ' &middot; ' + _fmtDuration(totalDur);
+
+            var sepEl = document.getElementById('status-sep');
+            var selEl = document.getElementById('status-sel');
+            if (_anchorIdx >= 0) {
+                var mn = _selMin(), mx = _selMax();
+                var selDist = (_cumDist.length > mx) ? _cumDist[mx] - _cumDist[mn] : null;
+                var ts = _epoch(_allPts[mn].time), te = _epoch(_allPts[mx].time);
+                var selDur = (ts !== null && te !== null) ? te - ts : null;
+                selEl.innerHTML = lbl + 'Selected</span>&nbsp; ' +
+                    (selDist !== null ? _fmtDist(selDist) : '—') + ' &middot; ' + _fmtDuration(selDur) +
+                    ' <span style="color:#A1A1AA;font-size:10px;">(#' + (mn+1) + '&ndash;' + (mx+1) + ')</span>';
+                sepEl.style.display = 'inline';
+                selEl.style.display = 'inline';
+            } else {
+                sepEl.style.display = 'none';
+                selEl.style.display = 'none';
+            }
+        }
+
+        // ── Modal helpers ─────────────────────────────────────────────────────
+        var _modalCallback = null;
+
+        function _showModal(title, bodyHtml, okCb) {
+            document.getElementById('modal-title').innerHTML = title;
+            document.getElementById('modal-body').innerHTML  = bodyHtml;
+            _modalCallback = okCb;
+            document.getElementById('modal-overlay').style.display = 'block';
+            var first = document.querySelector('#modal-body input');
+            if (first) { setTimeout(function(){ first.focus(); first.select(); }, 50); }
+        }
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            _modalCallback = null;
+        }
+        function _modalOk() { if (_modalCallback) { _modalCallback(); } }
+
+        // ── Change start time ─────────────────────────────────────────────────
+        function ctxChangeStartTime() {
+            _hideCtxMenu();
+            if (!_allPts.length || !_allPts[0].time) { alert('No timestamps available.'); return; }
+            var cur = _allPts[0].time.replace('Z','').replace('T',' ');
+            _showModal('Change Start Time',
+                '<div class="modal-field">' +
+                  '<label class="modal-label">New start time (UTC)</label>' +
+                  '<input id="mi-start" class="modal-input" type="text" value="'+cur+'" placeholder="YYYY-MM-DD HH:MM:SS"/>' +
+                  '<div class="modal-hint">All timestamps will shift by the same offset.</div>' +
+                '</div>',
+                function() {
+                    var raw = document.getElementById('mi-start').value.trim().replace(' ','T');
+                    if (!raw) { return; }
+                    if (!/Z$/i.test(raw)) { raw += 'Z'; }
+                    var newT = new Date(raw).getTime();
+                    if (isNaN(newT)) { alert('Invalid format. Use: YYYY-MM-DD HH:MM:SS'); return; }
+                    var oldT = _epoch(_allPts[0].time);
+                    if (oldT === null) { return; }
+                    var delta = newT - oldT;
+                    for (var i = 0; i < _allPts.length; i++) {
+                        if (_allPts[i].time) {
+                            var t = _epoch(_allPts[i].time);
+                            if (t !== null) {
+                                _allPts[i].time = new Date(t + delta).toISOString().replace(/\.\d{3}Z$/,'Z');
+                            }
+                        }
+                    }
+                    _buildPanel(_allPts);
+                    _updateStatusBar();
+                }
+            );
+        }
+
+        // ── Increase speed ────────────────────────────────────────────────────
+        function ctxIncreaseSpeed() {
+            _hideCtxMenu();
+            if (_anchorIdx < 0) { alert('Select a range of points first.'); return; }
+            var mn = _selMin(), mx = _selMax();
+            if (mn === mx) { alert('Select more than one point.'); return; }
+            _precompute(_allPts);
+            var segDistKm = (_cumDist[mx] - _cumDist[mn]) / 1000;
+            var tS = _epoch(_allPts[mn].time), tE = _epoch(_allPts[mx].time);
+            if (tS === null || tE === null) { alert('Selected points have no timestamps.'); return; }
+            var curDurMs = tE - tS;
+            var curDurH  = curDurMs / 3600000;
+            var curSpeed = curDurH > 0 ? (segDistKm / curDurH) : 0;
+            var curPace  = segDistKm > 0 ? (curDurMs / 60000) / segDistKm : 0;
+
+            _showModal('Increase Speed &mdash; Selected Segment',
+                '<div class="modal-field">' +
+                  '<label class="modal-label">Speed change value (positive = faster)</label>' +
+                  '<input id="mi-spd" class="modal-input" type="text" value="" placeholder="e.g. 2"/>' +
+                '</div>' +
+                '<div class="modal-field">' +
+                  '<label class="modal-label">Unit</label>' +
+                  '<label class="modal-radio"><input type="radio" name="spdu" value="kmh" checked/> &nbsp;km/h &nbsp;<span style="color:#A1A1AA;font-size:10.5px;">current: '+curSpeed.toFixed(1)+' km/h</span></label>' +
+                  '<label class="modal-radio"><input type="radio" name="spdu" value="minkm"/> &nbsp;min/km &nbsp;<span style="color:#A1A1AA;font-size:10.5px;">current: '+curPace.toFixed(2)+' min/km (lower = faster)</span></label>' +
+                '</div>' +
+                '<div class="modal-hint">Time gaps inside the selection are scaled proportionally.<br/>All points after the selection shift by the same time delta.</div>',
+                function() {
+                    var val = parseFloat(document.getElementById('mi-spd').value);
+                    if (isNaN(val) || val === 0) { return; }
+                    var unit = document.querySelector('input[name="spdu"]:checked').value;
+                    var newDurMs;
+                    if (unit === 'kmh') {
+                        var ns = curSpeed + val;
+                        if (ns <= 0) { alert('Resulting speed would be zero or negative.'); return; }
+                        newDurMs = (segDistKm / ns) * 3600000;
+                    } else {
+                        var np = curPace - val;
+                        if (np <= 0) { alert('Resulting pace would be zero or negative.'); return; }
+                        newDurMs = np * segDistKm * 60000;
+                    }
+                    var scale = newDurMs / curDurMs;
+                    var totalDelta = Math.round(newDurMs - curDurMs);
+                    var base = _epoch(_allPts[mn].time);
+                    for (var i = mn + 1; i <= mx; i++) {
+                        var orig = _epoch(_allPts[i].time);
+                        if (orig !== null) {
+                            _allPts[i].time = new Date(base + Math.round((orig - base) * scale))
+                                .toISOString().replace(/\.\d{3}Z$/,'Z');
+                        }
+                    }
+                    for (var j = mx + 1; j < _allPts.length; j++) {
+                        var tj = _epoch(_allPts[j].time);
+                        if (tj !== null) {
+                            _allPts[j].time = new Date(tj + totalDelta).toISOString().replace(/\.\d{3}Z$/,'Z');
+                        }
+                    }
+                    _buildPanel(_allPts);
+                    _applySelection();
+                    _updateStatusBar();
+                }
+            );
+        }
+
+        // ── Draw track (called from Python) ───────────────────────────────────
+        function drawTrack(jsonStr) {
+            _allPts = JSON.parse(jsonStr);
+            if (!_allPts || _allPts.length === 0) { return; }
+
+            _markers.forEach(function(m) { map.removeLayer(m); }); _markers = [];
+            _hoverIdx = -1; _anchorIdx = -1; _selEnd = -1; _splitIdx = -1;
+            _rafPending = false;
+            _clearArrows();
+            if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
+            _hoverDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _anchorDot.setStyle({ opacity: 0, fillOpacity: 0 });
+            _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
+
+            _redrawPolylines();
+            _hoverDot.addTo(map);
+            _anchorDot.addTo(map);
+            _endDot.addTo(map);
+
+            var latlngs = _allPts.map(function(p) { return [p.lat, p.lon]; });
+            var sm = L.circleMarker(latlngs[0], {
+                radius: 7, color: '#16A34A', fillColor: '#22C55E', fillOpacity: 1, weight: 2
+            }).bindTooltip('Start').addTo(map);
+            var em = L.circleMarker(latlngs[latlngs.length-1], {
+                radius: 7, color: '#B91C1C', fillColor: '#EF4444', fillOpacity: 1, weight: 2
+            }).bindTooltip('End').addTo(map);
+            _markers.push(sm, em);
+
+            map.fitBounds(_track.getBounds(), { padding: [20, 20] });
+
+            _buildPanel(_allPts);
+            document.getElementById('toggle-btn').style.display = 'block';
+            document.getElementById('toggle-count').innerHTML = '('+_allPts.length+')';
+            _panelOpen = false; togglePanel();
+        }
+
+        // ── Build point list ──────────────────────────────────────────────────
+        function _buildPanel(pts) {
+            var MAX = 2000, shown = Math.min(pts.length, MAX);
+
+            document.getElementById('pt-count').innerHTML =
+                shown < pts.length ? shown+' / '+pts.length+' shown' : pts.length+' points';
+
+            // Precompute stats for ALL points (tooltip uses them too)
+            _precompute(pts);
+
+            var rows = [];
+            for (var i = 0; i < shown; i++) {
+                // Segment divider
+                if (_splitIdx >= 0 && i === _splitIdx + 1) {
+                    rows.push('<div class="seg-divider">&#9654; Segment 2</div>');
+                }
+                var p = pts[i];
+                var spd = _speed[i] != null ? _speed[i].toFixed(1)+' km/h' : '—';
+                var gap = i > 0 ? _fmtDist(_gapDist[i]) : '—';
+                rows.push(
+                    '<div id="r'+i+'" class="pt-row" data-idx="'+i+'">' +
+                        '<span class="c-idx">'+(i+1)+'</span>' +
+                        '<span class="c-time">'+_fmtTime(p.time)+'</span>' +
+                        '<span class="c-dist">'+_fmtDist(_cumDist[i])+'</span>' +
+                        '<span class="c-gap">'+gap+'</span>' +
+                        '<span class="c-speed">'+spd+'</span>' +
+                        '<span class="c-coord">'+p.lat.toFixed(5)+', '+p.lon.toFixed(5)+'</span>' +
+                    '</div>'
+                );
+            }
+            document.getElementById('pt-list').innerHTML = rows.join('');
+
+            // Event delegation
+            var list = document.getElementById('pt-list');
+
+            list.onmouseover = function(e) {
+                var el = e.target || e.srcElement;
+                while (el && el !== list) {
+                    if (el.getAttribute('data-idx') !== null) { _onHover(parseInt(el.getAttribute('data-idx'),10)); return; }
+                    el = el.parentNode;
+                }
+            };
+            list.onmouseout = function(e) {
+                var to = e.toElement || e.relatedTarget;
+                while (to) { if (to === list) { return; } to = to.parentNode; }
+                _clearHover();
+            };
+            list.onclick = function(e) {
+                var el = e.target || e.srcElement;
+                while (el && el !== list) {
+                    if (el.getAttribute('data-idx') !== null) {
+                        _selectPoint(parseInt(el.getAttribute('data-idx'),10), e.shiftKey); return;
+                    }
+                    el = el.parentNode;
+                }
+            };
+            list.oncontextmenu = function(e) {
+                var el = e.target || e.srcElement;
+                while (el && el !== list) {
+                    if (el.getAttribute('data-idx') !== null) {
+                        var idx = parseInt(el.getAttribute('data-idx'),10);
+                        if (_anchorIdx >= 0 && idx >= _selMin() && idx <= _selMax()) {
+                            e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+                            _showCtxMenu(e.clientX, e.clientY);
+                            return false;
+                        }
+                    }
+                    el = el.parentNode;
+                }
+            };
+            _updateStatusBar();
+        }
+
+        // ── Global dismiss ────────────────────────────────────────────────────
+        map.on('click', function() { _clearSelection(); _hideCtxMenu(); });
+
+        document.addEventListener('keydown', function(e) {
+            var esc = (e.key || e.keyCode) === 'Escape' || (e.key || e.keyCode) === 27;
+            var enter = (e.key || e.keyCode) === 'Enter' || (e.key || e.keyCode) === 13;
+            if (esc) {
+                _hideCtxMenu();
+                closeModal();
+                closeHelp();
+            }
+            if (enter && document.getElementById('modal-overlay').style.display === 'block') {
+                _modalOk();
+                closeModal();
+            }
+        });
+        document.addEventListener('click', function(e) {
+            var t = e.target || e.srcElement;
+            var menu = document.getElementById('ctx-menu');
+            if (menu.style.display === 'block') {
+                var n = t;
+                while (n) { if (n === menu) { return; } n = n.parentNode; }
+                _hideCtxMenu();
+            }
+            var mo = document.getElementById('modal-overlay');
+            if (mo.style.display === 'block') {
+                var box = document.getElementById('modal-box');
+                var n2 = t;
+                while (n2) { if (n2 === box) { return; } n2 = n2.parentNode; }
+                closeModal();
+            }
+        });
+
+        // ── Python bridge — called via InvokeScript ───────────────────────────
+        function getModifiedPts() { return JSON.stringify(_allPts); }
+        function getSplitIdx()    { return String(_splitIdx); }
+
+        // ── Help modal ────────────────────────────────────────────────────────
+        function openHelp()  { document.getElementById('help-overlay').style.display = 'block'; }
+        function closeHelp() { document.getElementById('help-overlay').style.display = 'none'; }
+
+        // ── Toggle panel ──────────────────────────────────────────────────────
+        function togglePanel() {
+            _panelOpen = !_panelOpen;
+            document.getElementById('point-panel').style.display = _panelOpen ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

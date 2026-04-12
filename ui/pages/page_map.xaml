@@ -1,0 +1,120 @@
+<Page xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="#F4F4F5">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ── LEFT PANE — Controls ──────────────────────── -->
+        <Border Grid.Column="0" Background="White"
+                BorderBrush="#E4E4E7" BorderThickness="0,0,1,0">
+            <StackPanel Margin="16,20,16,12">
+
+                <TextBlock Text="GPX FILE"
+                           FontSize="10" FontWeight="SemiBold"
+                           Foreground="#A1A1AA" Margin="0,0,0,12"/>
+
+                <Button Name="BtnLoad" Content="Load GPX…"
+                        Height="36" Margin="0,0,0,8"
+                        Background="#18181B" Foreground="White"
+                        FontSize="13" FontWeight="Medium"
+                        BorderThickness="0"/>
+
+                <Button Name="BtnSave" Content="Save GPX…"
+                        Height="36" Margin="0,0,0,20"
+                        Background="#2563EB" Foreground="White"
+                        FontSize="13" FontWeight="Medium"
+                        BorderThickness="0"
+                        IsEnabled="False"/>
+
+                <Separator Background="#E4E4E7" Margin="0,0,0,16"/>
+
+                <TextBlock Text="TRACK INFO"
+                           FontSize="10" FontWeight="SemiBold"
+                           Foreground="#A1A1AA" Margin="0,0,0,12"/>
+
+                <!-- Track name -->
+                <TextBlock Name="LblTrackName"
+                           Text="—"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="#18181B"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,16"/>
+
+                <!-- Stats grid -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Distance -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,12">
+                        <TextBlock Text="Distance" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblDistance" Text="—" FontSize="13" FontWeight="Medium" Foreground="#18181B"/>
+                    </StackPanel>
+
+                    <!-- Points -->
+                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,12">
+                        <TextBlock Text="Points" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblPoints" Text="—" FontSize="13" FontWeight="Medium" Foreground="#18181B"/>
+                    </StackPanel>
+
+                    <!-- Ele gain -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,12">
+                        <TextBlock Text="Ele. gain" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblEleGain" Text="—" FontSize="13" FontWeight="Medium" Foreground="#22C55E"/>
+                    </StackPanel>
+
+                    <!-- Ele loss -->
+                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
+                        <TextBlock Text="Ele. loss" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblEleLoss" Text="—" FontSize="13" FontWeight="Medium" Foreground="#EF4444"/>
+                    </StackPanel>
+
+                    <!-- Ele min -->
+                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,12">
+                        <TextBlock Text="Ele. min" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblEleMin" Text="—" FontSize="13" FontWeight="Medium" Foreground="#18181B"/>
+                    </StackPanel>
+
+                    <!-- Ele max -->
+                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
+                        <TextBlock Text="Ele. max" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblEleMax" Text="—" FontSize="13" FontWeight="Medium" Foreground="#18181B"/>
+                    </StackPanel>
+
+                    <!-- Duration -->
+                    <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,12">
+                        <TextBlock Text="Duration" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,2"/>
+                        <TextBlock Name="LblDuration" Text="—" FontSize="13" FontWeight="Medium" Foreground="#18181B"/>
+                    </StackPanel>
+
+                </Grid>
+
+                <Separator Background="#E4E4E7" Margin="0,4,0,16"/>
+
+                <!-- Status -->
+                <TextBlock Name="LblStatus"
+                           Text="No file loaded."
+                           FontSize="11"
+                           Foreground="#A1A1AA"
+                           TextWrapping="Wrap"/>
+
+            </StackPanel>
+        </Border>
+
+        <!-- ── MAP ──────────────────────────────────────── -->
+        <WebBrowser Name="MapBrowser" Grid.Column="1"/>
+
+    </Grid>
+</Page>
