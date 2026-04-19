@@ -237,9 +237,22 @@
                         Background="#F9F9F9"
                         BorderBrush="#E4E4E7" BorderThickness="0,0,0,1"
                         Padding="12,0">
-                    <TextBlock Name="LblSyncStatus" Text="Select a track"
-                               FontSize="11" Foreground="#71717A"
-                               VerticalAlignment="Center"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Name="LblSyncStatus" Text="Select a track"
+                                   FontSize="11" Foreground="#71717A"
+                                   VerticalAlignment="Center"/>
+                        <Border Name="BtnSnap" Grid.Column="1"
+                                CornerRadius="3" Padding="8,0" Height="22"
+                                Background="#E4E4E7" Cursor="Hand" Margin="0,0,4,0">
+                            <TextBlock Name="TxtSnapLabel" Text="⊠ Snap ON"
+                                       FontSize="10" Foreground="#52525B"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
                 </Border>
 
                 <!-- Timeline canvas -->
@@ -252,10 +265,10 @@
         </Grid>
 
         <!-- ── Map overlay popup ──────────────────────────────────────────── -->
-        <Popup Name="MapOverlayPopup"
-               Grid.Column="2"
-               AllowsTransparency="True" StaysOpen="True"
-               Placement="Absolute">
+         <Popup Name="MapOverlayPopup"
+             Grid.Column="2"
+             AllowsTransparency="False" StaysOpen="True"
+             Placement="Absolute">
 
             <Border BorderBrush="#3F3F46" BorderThickness="1"
                     CornerRadius="6" ClipToBounds="True" Width="290">

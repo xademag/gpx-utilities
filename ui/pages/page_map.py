@@ -570,7 +570,7 @@ class MapPage:
     # ── Draw ─────────────────────────────────────────────────────────────────
 
     def _draw_track(self, track):
-        pts = [{"lat": p.lat, "lon": p.lon, "ele": p.ele, "time": p.time}
+        pts = [{"lat": p.lat, "lon": p.lon, "ele": p.ele, "time": p.time, "extensions": p.extensions}
                for p in track.points]
         try:
             self.MapBrowser.InvokeScript("drawTrack", Array[Object]([json.dumps(pts)]))

@@ -537,6 +537,9 @@
         // Direction arrows
         var _arrows = [];
 
+        // Overlay mode (compact map for video overlay) disables UI elements
+        var _overlayMode = false;
+
         // Background tracks (other loaded files)
         var _bgPolylines = [];
 
@@ -594,7 +597,7 @@
 
         function setArrowEveryN(n) {
             _arrowEveryN = Math.max(0, parseInt(n, 10) || 0);
-            if (_allPts && _allPts.length > 1) { _drawArrows(_allPts); }
+            if (!_overlayMode && _allPts && _allPts.length > 1) { _drawArrows(_allPts); }
         }
 
         function _drawArrows(pts) {
@@ -718,6 +721,7 @@
 
         // ── Map hover tooltip ─────────────────────────────────────────────────
         function _showTooltip(idx) {
+            if (_overlayMode) { return; }
             if (idx < 0 || idx >= _allPts.length) { return; }
             var p   = _allPts[idx];
             var cum = _cumDist.length > idx ? _cumDist[idx] : null;
@@ -796,6 +800,7 @@
         // fromMap=true  → show the tooltip (hover on the map track)
         // fromMap=false → highlight dot + row only, tooltip stays hidden (hover in list)
         function _onHover(idx, fromMap) {
+            if (_overlayMode) { return; }
             if (fromMap === undefined) { fromMap = true; }
             if (idx === _hoverIdx) {
                 if (fromMap && idx >= 0) {
@@ -956,7 +961,7 @@
                 _attachTrackEvents(_track2);
             }
 
-            _drawArrows(_allPts);
+            if (!_overlayMode) { _drawArrows(_allPts); }
 
             // Active track always on top of background tracks
             if (_track)  { _track.bringToFront(); }
@@ -1375,14 +1380,31 @@
             }).bindTooltip('End').addTo(map);
             _markers.push(sm, em);
 
-            _buildPanel(_allPts);
-            document.getElementById('toggle-btn').style.display = 'block';
-            document.getElementById('toggle-count').innerHTML = '('+_allPts.length+')';
-            _panelOpen = false; togglePanel();
+            // Build the point list unless we're in compact overlay mode
+            try {
+                if (!_overlayMode) {
+                    _buildPanel(_allPts);
+                    var tb = document.getElementById('toggle-btn');
+                    if (tb) tb.style.display = 'block';
+                    var tc = document.getElementById('toggle-count');
+                    if (tc) tc.innerHTML = '('+_allPts.length+')';
+                    _panelOpen = false; togglePanel();
+                } else {
+                    // Ensure point panel is hidden in overlay mode
+                    try { document.getElementById('point-panel').style.display = 'none'; } catch (e) {}
+                    try { document.getElementById('toggle-btn').style.display = 'none'; } catch (e) {}
+                    try { document.getElementById('toggle-count').innerHTML = ''; } catch (e) {}
+                }
+            } catch (e) { /* ignore DOM errors in embedded browser */ }
         }
 
         // ── Build point list ──────────────────────────────────────────────────
         function _buildPanel(pts) {
+            if (_overlayMode) {
+                try { document.getElementById('pt-count').innerHTML = ''; } catch (e) {}
+                try { document.getElementById('pt-list').innerHTML = ''; } catch (e) {}
+                return;
+            }
             var MAX = 2000, shown = Math.min(pts.length, MAX);
 
             document.getElementById('pt-count').innerHTML =
@@ -1716,6 +1738,22 @@
         function loadTrack(ptsJson) {
             // Reuse drawTrack but disable editing gestures by clearing pts after draw
             drawTrack(ptsJson);
+            try {
+                // Parse points and fit map to their bounds (or center on single point)
+                var pts = JSON.parse(ptsJson) || [];
+                if (!pts || pts.length === 0) return;
+                var latlngs = pts.map(function(p) { return [p.lat, p.lon]; });
+                // Ensure layout is up-to-date before fitting
+                try { map.invalidateSize(); } catch (e) {}
+                if (latlngs.length > 1) {
+                    var b = L.latLngBounds(latlngs);
+                    map.fitBounds(b, { padding: [20, 20] });
+                } else {
+                    map.setView(latlngs[0], Math.max(13, map.getZoom()));
+                }
+            } catch (e) {
+                /* ignore */
+            }
         }
 
         function setPosition(lat, lon) {
@@ -1724,6 +1762,17 @@
             } else {
                 _vidPosMarker.setLatLng([lat, lon]);
             }
+            try {
+                // Center/pan the mini-map to the video position and highlight it
+                map.panTo([parseFloat(lat), parseFloat(lon)]);
+            } catch (e) {}
+            try {
+                if (_anchorDot) {
+                    _anchorDot.setLatLng([parseFloat(lat), parseFloat(lon)]);
+                    _anchorDot.setStyle({ opacity: 1, fillOpacity: 0.95 });
+                    _anchorDot.bringToFront && _anchorDot.bringToFront();
+                }
+            } catch (e) {}
         }
 
         function clearPosition() {
@@ -1737,6 +1786,20 @@
                 var el = document.getElementById(hide[i]);
                 if (el) el.style.display = 'none';
             }
+            // Ensure Leaflet recalculates layout when embedded in a popup/overlay
+            try {
+                setTimeout(function() { map.invalidateSize(); }, 50);
+            } catch (e) {
+                /* ignore */
+            }
+            _overlayMode = true;
+        }
+
+        // Public helper for hosts to force a map resize after making the container visible
+        function invalidateMap() {
+            try {
+                setTimeout(function() { map.invalidateSize(); }, 50);
+            } catch (e) {}
         }
     </script>
 </body>

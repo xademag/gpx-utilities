@@ -20,7 +20,21 @@ def write_gpx(pts: list[dict], path: str, split_idx: int = -1) -> None:
                 ET.SubElement(trkpt, f"{{{NS}}}ele").text = f"{p['ele']:.1f}"
             if p.get("time"):
                 ET.SubElement(trkpt, f"{{{NS}}}time").text = p["time"]
+            # Preserve any raw <extensions> XML (string) by parsing and appending
+            if p.get("extensions"):
+                try:
+                    ext_el = ET.fromstring(p["extensions"])
+                    trkpt.append(ext_el)
+                except Exception:
+                    # If the stored string was inner XML without a wrapper, try wrapping
+                    try:
+                        ext_el = ET.fromstring(f"<extensions>{p['extensions']}</extensions>")
+                        trkpt.append(ext_el)
+                    except Exception:
+                        pass
 
+    # Register default namespace so output uses the default xmlns (no ns0 prefix)
+    ET.register_namespace('', NS)
     gpx = ET.Element(f"{{{NS}}}gpx")
     gpx.set("version", "1.1")
     gpx.set("creator", "GPX Utility")
@@ -63,8 +77,11 @@ def parse_gpx(path: str) -> list[GPXTrack]:
                 time_el = pt.find(f"{ns}time")
                 ele  = float(ele_el.text)  if ele_el  is not None and ele_el.text  else None
                 time = time_el.text.strip() if time_el is not None and time_el.text else None
+                # Preserve <extensions> element (as raw XML string) if present
+                ext_el = pt.find(f"{ns}extensions")
+                extensions = ET.tostring(ext_el, encoding='unicode') if ext_el is not None else None
 
-                points.append(GPXPoint(lat=lat, lon=lon, ele=ele, time=time))
+                points.append(GPXPoint(lat=lat, lon=lon, ele=ele, time=time, extensions=extensions))
 
         tracks.append(GPXTrack(name=name, points=points))
 

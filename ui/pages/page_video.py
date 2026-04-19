@@ -7,20 +7,20 @@ from System import Uri, Array, Object, TimeSpan
 from System.Windows import (FontWeights, Thickness, VerticalAlignment, Point,
                              Visibility, CornerRadius, HorizontalAlignment,
                              WindowStartupLocation, ResizeMode, SizeToContent,
-                             Application)
+                             Application, PresentationSource)
 from System.Windows.Controls import (TreeViewItem, StackPanel, TextBlock,
                                      Canvas, Grid as WPFGrid,
                                      Border as WPFBorder, TextBox as WPFTextBox,
                                      Label as WPFLabel, Button as WPFButton,
                                      Orientation)
 from System.Windows.Input import Cursors, Key
-from System.Windows.Media import SolidColorBrush, Color, Brushes
+from System.Windows.Media import SolidColorBrush, Color, Brushes, FontFamily
 from System.Windows.Shapes import Line, Polygon
 from System.Windows.Media import PointCollection
 from System.Windows.Threading import DispatcherTimer
 from Microsoft.Win32 import OpenFileDialog
 
-import wpf, os, json, math
+import wpf, os, json, math, ctypes, ctypes.wintypes
 
 from core import settings as settings_mod
 from core import tile_server as tile_server_mod
@@ -145,7 +145,10 @@ class VideoSyncPage:
         self._overlays       = []   # list of overlay dicts
         self._next_ov_id     = 0
         self._sel_ov_id      = None
-        self._ov_tl_rects    = {}   # ov_id → (x1, x2)
+        self._ov_tl_rects    = {}   # ov_id → (x1, x2, row)
+        self._ov_num_rows    = 3    # current number of rows (grows as needed)
+        self._ov_scroll_row  = 0    # index of topmost visible row
+        self._snap_enabled   = True
 
         # video overlay drag
         self._ov_drag_id         = None
@@ -177,6 +180,7 @@ class VideoSyncPage:
         self.BtnApplyOverlayText.MouseLeftButtonDown += self._on_apply_overlay_text
         self.BtnDeleteOverlay.MouseLeftButtonDown    += self._on_delete_overlay
         self.OverlayTextBox.KeyDown                  += self._on_overlay_textbox_keydown
+        self.BtnSnap.MouseLeftButtonDown             += self._on_snap_toggle
 
         # Deselect overlay when clicking empty canvas area
         self.OverlayCanvas.MouseLeftButtonDown += self._on_overlay_canvas_click
@@ -186,7 +190,7 @@ class VideoSyncPage:
         self.TimelineCanvas.MouseLeftButtonDown += self._on_timeline_mousedown
         self.TimelineCanvas.MouseMove           += self._on_timeline_mousemove
         self.TimelineCanvas.MouseLeftButtonUp   += self._on_timeline_mouseup
-        self.TimelineCanvas.MouseDoubleClick    += self._on_timeline_dblclick
+        self.TimelineCanvas.MouseWheel          += self._on_tl_mousewheel
         self.TimelineCanvas.SizeChanged         += self._on_timeline_resize
 
         # ── Wire tree ─────────────────────────────────────────────────────────
@@ -268,6 +272,40 @@ class VideoSyncPage:
     def _open_map_overlay(self):
         self._map_popup.IsOpen = True
         self._reposition_map_overlay()
+        # After the popup is visible, force the embedded map to recalculate size.
+        # Call a couple times with small delays to ensure the browser has laid out.
+        try:
+            self._map_browser.InvokeScript("invalidateMap")
+        except Exception:
+            pass
+
+        try:
+            t = DispatcherTimer()
+            t.Interval = TimeSpan.FromMilliseconds(150)
+            def _once(s, e):
+                t.Stop()
+                try:
+                    self._map_browser.InvokeScript("invalidateMap")
+                except Exception:
+                    pass
+            t.Tick += _once
+            t.Start()
+        except Exception:
+            pass
+
+        try:
+            t2 = DispatcherTimer()
+            t2.Interval = TimeSpan.FromMilliseconds(600)
+            def _once2(s, e):
+                t2.Stop()
+                try:
+                    self._map_browser.InvokeScript("invalidateMap")
+                except Exception:
+                    pass
+            t2.Tick += _once2
+            t2.Start()
+        except Exception:
+            pass
 
     def _reposition_map_overlay(self):
         try:
@@ -295,26 +333,41 @@ class VideoSyncPage:
     def _close_map_overlay(self):
         self._map_popup.IsOpen = False
 
+    @staticmethod
+    def _get_cursor_screen_pos():
+        """Return (x, y) screen cursor position via Win32, independent of WPF layout."""
+        pt = ctypes.wintypes.POINT()
+        ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+        return pt.x, pt.y
+
+    def _get_dpi_scale(self):
+        """Return the DPI scale factor for the window (1.0 = 96 dpi)."""
+        try:
+            src = PresentationSource.FromVisual(Application.Current.MainWindow)
+            return src.CompositionTarget.TransformToDevice.M11
+        except Exception:
+            return 1.0
+
     def _on_drag_start(self, sender, e):
         self._dragging = True
         self._drag_start_offset_x = self._map_popup.HorizontalOffset
         self._drag_start_offset_y = self._map_popup.VerticalOffset
-        local_pt = e.GetPosition(sender)
-        screen_pt = sender.PointToScreen(Point(local_pt.X, local_pt.Y))
-        self._drag_start_screen_x = screen_pt.X
-        self._drag_start_screen_y = screen_pt.Y
+        sx, sy = self._get_cursor_screen_pos()
+        self._drag_start_screen_x = sx
+        self._drag_start_screen_y = sy
+        self._drag_dpi_scale = self._get_dpi_scale()
         sender.CaptureMouse()
         e.Handled = True
 
     def _on_drag_move(self, sender, e):
         if not self._dragging:
             return
-        local_pt  = e.GetPosition(sender)
-        screen_pt = sender.PointToScreen(Point(local_pt.X, local_pt.Y))
+        sx, sy = self._get_cursor_screen_pos()
+        scale = self._drag_dpi_scale
         self._map_popup.HorizontalOffset = (
-            self._drag_start_offset_x + screen_pt.X - self._drag_start_screen_x)
+            self._drag_start_offset_x + (sx - self._drag_start_screen_x) / scale)
         self._map_popup.VerticalOffset = (
-            self._drag_start_offset_y + screen_pt.Y - self._drag_start_screen_y)
+            self._drag_start_offset_y + (sy - self._drag_start_screen_y) / scale)
 
     def _on_drag_end(self, sender, e):
         self._dragging = False
@@ -514,8 +567,21 @@ class VideoSyncPage:
         self._seek(self._video_pos_ms + delta_ms)
 
     def _seek(self, target_ms):
-        target_ms = max(0.0, min(self._duration_ms, float(target_ms)))
-        self.VideoPlayer.Position = TimeSpan.FromTicks(int(target_ms * 10000))
+        # Allow seeking the timeline beyond the video duration — update map/playhead
+        # Remember requested timeline position (may be beyond video duration).
+        req = float(target_ms)
+        self._video_pos_ms = max(0.0, req)
+
+        # Update media position only if a video is loaded; avoid seeking past
+        # the end (can produce a black frame). Use a small safety margin.
+        try:
+            if self._video_path and self._duration_ms > 0:
+                eps_ms = 10.0
+                media_ms = min(self._video_pos_ms, max(0.0, self._duration_ms - eps_ms))
+                self.VideoPlayer.Position = TimeSpan.FromTicks(int(media_ms * 10000))
+        except Exception:
+            pass
+
         self._video_pos_ms = target_ms
         self._update_time_label()
         self._update_playhead()
@@ -655,24 +721,36 @@ class VideoSyncPage:
         lst.clear()
 
     # ── Layout constants ──────────────────────────────────────────────────────
-    # From bottom: 14px ruler | 2px gap | 10px video bar | 3px gap | 14px overlay bars | 4px gap | speed chart
-    _RULER_H     = 14
-    _BAR_H       = 10
-    _BAR_GAP     = 2
-    _OV_BAR_H    = 14   # text overlay bars row
-    _OV_BAR_GAP  = 3    # gap between video bar and overlay bars
-    _BAR_TOP_GAP = 4    # gap between overlay bars and speed graph
+    # From bottom: ruler | gap | video bar | gap | [N visible overlay rows] | gap | speed chart
+    _RULER_H          = 14
+    _BAR_H            = 10
+    _BAR_GAP          = 2
+    _OV_ROW_H         = 18   # height of each overlay row
+    _NUM_VISIBLE_ROWS = 3    # rows always shown (can scroll if more exist)
+    _OV_BAR_GAP       = 3    # gap between video bar bottom and overlay area top
+    _BAR_TOP_GAP      = 4    # gap between overlay area top and speed chart bottom
+
+    def _ov_area_h(self):
+        return self._NUM_VISIBLE_ROWS * self._OV_ROW_H
 
     def _graph_h(self, canvas_h):
         return max(0, canvas_h - self._RULER_H - self._BAR_GAP - self._BAR_H
-                   - self._OV_BAR_GAP - self._OV_BAR_H - self._BAR_TOP_GAP)
+                   - self._OV_BAR_GAP - self._ov_area_h() - self._BAR_TOP_GAP)
 
     def _bar_top(self, canvas_h):
         return max(0, canvas_h - self._RULER_H - self._BAR_GAP - self._BAR_H)
 
-    def _ov_bar_top(self, canvas_h):
+    def _ov_area_top(self, canvas_h):
+        """Top Y of the entire overlay rows area."""
         return max(0, canvas_h - self._RULER_H - self._BAR_GAP - self._BAR_H
-                   - self._OV_BAR_GAP - self._OV_BAR_H)
+                   - self._OV_BAR_GAP - self._ov_area_h())
+
+    def _ov_row_top(self, canvas_h, row):
+        """Top Y of a specific row (None if row is scrolled out of view)."""
+        vis = row - self._ov_scroll_row
+        if vis < 0 or vis >= self._NUM_VISIBLE_ROWS:
+            return None
+        return self._ov_area_top(canvas_h) + vis * self._OV_ROW_H
 
     # ── Layer 0: video-length bar ─────────────────────────────────────────────
 
@@ -883,27 +961,79 @@ class VideoSyncPage:
 
         w = self.TimelineCanvas.ActualWidth
         h = self.TimelineCanvas.ActualHeight
-        if w <= 0 or h <= 0 or not self._overlays:
+        if w <= 0 or h <= 0:
             return
+
+        area_top = self._ov_area_top(h)
+        area_h   = self._ov_area_h()
+        data_w   = self._data_w(w)
         total_ms = self._tl_axis_ms()
+
+        # ── Row background strips ─────────────────────────────────────────────
+        for vis in range(self._NUM_VISIBLE_ROWS):
+            row_y = area_top + vis * self._OV_ROW_H
+            bg = WpfRect()
+            bg.Width  = data_w
+            bg.Height = self._OV_ROW_H
+            bg.Fill   = _brush_a(14 if vis % 2 == 0 else 6, 0, 0, 0)
+            Canvas.SetLeft(bg, self._LEFT_MARGIN)
+            Canvas.SetTop(bg, row_y)
+            self.TimelineCanvas.Children.Add(bg)
+            self._tl_overlays.append(bg)
+
+            # Row number in gutter
+            rn = TextBlock()
+            rn.Text       = str(vis + self._ov_scroll_row + 1)
+            rn.FontSize   = 7.5
+            rn.Foreground = _CLR_TICK_LBL
+            Canvas.SetLeft(rn, 26)
+            Canvas.SetTop(rn, row_y + (self._OV_ROW_H - 9) / 2)
+            self.TimelineCanvas.Children.Add(rn)
+            self._tl_overlays.append(rn)
+
+        # "T" gutter label centred on the area
+        gutter = TextBlock()
+        gutter.Text      = "T"
+        gutter.FontSize  = 8.5
+        gutter.Foreground = _CLR_TICK_LBL
+        Canvas.SetLeft(gutter, 10)
+        Canvas.SetTop(gutter, area_top + (area_h - 10) / 2)
+        self.TimelineCanvas.Children.Add(gutter)
+        self._tl_overlays.append(gutter)
+
+        # ── Scroll arrows ─────────────────────────────────────────────────────
+        if self._ov_num_rows > self._NUM_VISIBLE_ROWS:
+            if self._ov_scroll_row > 0:
+                up = TextBlock()
+                up.Text = "▲"; up.FontSize = 8.0; up.Foreground = _CLR_TICK_LBL
+                Canvas.SetLeft(up, 18); Canvas.SetTop(up, area_top - 10)
+                self.TimelineCanvas.Children.Add(up); self._tl_overlays.append(up)
+            if self._ov_scroll_row + self._NUM_VISIBLE_ROWS < self._ov_num_rows:
+                dn = TextBlock()
+                dn.Text = "▼"; dn.FontSize = 8.0; dn.Foreground = _CLR_TICK_LBL
+                Canvas.SetLeft(dn, 18); Canvas.SetTop(dn, area_top + area_h + 1)
+                self.TimelineCanvas.Children.Add(dn); self._tl_overlays.append(dn)
+
         if total_ms <= 0:
             return
 
-        ov_top = self._ov_bar_top(h)
-        data_w = self._data_w(w)
-
+        # ── Overlay bars ──────────────────────────────────────────────────────
         for ov in self._overlays:
+            row_top = self._ov_row_top(h, ov['row'])
+            if row_top is None:
+                continue   # scrolled out of view
+
             ov_id    = ov['id']
             r, g, b  = _OV_PALETTE[ov_id % len(_OV_PALETTE)]
             selected = (ov_id == self._sel_ov_id)
 
-            x1 = self._LEFT_MARGIN + ov['start_ms'] / total_ms * data_w
-            x2 = self._LEFT_MARGIN + ov['end_ms']   / total_ms * data_w
+            x1    = self._LEFT_MARGIN + ov['start_ms'] / total_ms * data_w
+            x2    = self._LEFT_MARGIN + ov['end_ms']   / total_ms * data_w
             bar_w = max(8.0, x2 - x1)
+            inn_h = self._OV_ROW_H - 4
 
-            self._ov_tl_rects[ov_id] = (x1, x1 + bar_w)
+            self._ov_tl_rects[ov_id] = (x1, x1 + bar_w, ov['row'])
 
-            # Main bar
             rect = WpfRect()
             rect.RadiusX         = 3
             rect.RadiusY         = 3
@@ -911,37 +1041,35 @@ class VideoSyncPage:
             rect.Stroke          = _brush(r, g, b)
             rect.StrokeThickness = 2.0 if selected else 1.0
             rect.Width           = bar_w
-            rect.Height          = self._OV_BAR_H
+            rect.Height          = inn_h
             Canvas.SetLeft(rect, x1)
-            Canvas.SetTop(rect, ov_top)
+            Canvas.SetTop(rect, row_top + 2)
             self.TimelineCanvas.Children.Add(rect)
             self._tl_overlays.append(rect)
 
-            # Text label inside bar
             if bar_w > 24:
                 lbl = TextBlock()
-                lbl.Text              = ov['text']
-                lbl.FontSize          = 9.0
-                lbl.Foreground        = Brushes.White
-                lbl.IsHitTestVisible  = False
+                lbl.Text             = ov['text']
+                lbl.FontSize         = 9.0
+                lbl.Foreground       = Brushes.White
+                lbl.IsHitTestVisible = False
                 Canvas.SetLeft(lbl, x1 + 5)
-                Canvas.SetTop(lbl, ov_top + 2)
+                Canvas.SetTop(lbl, row_top + 3)
                 self.TimelineCanvas.Children.Add(lbl)
                 self._tl_overlays.append(lbl)
 
-            # Resize handles (left and right edges)
-            for edge_x in (x1, x1 + bar_w - 4):
+            EDGE = 6
+            for edge_x in (x1, x1 + bar_w - EDGE):
                 handle = WpfRect()
-                handle.Fill           = _brush_a(100, 255, 255, 255)
-                handle.Width          = 4
-                handle.Height         = self._OV_BAR_H
+                handle.Fill             = _brush_a(100, 255, 255, 255)
+                handle.Width            = EDGE
+                handle.Height           = inn_h
                 handle.IsHitTestVisible = False
                 Canvas.SetLeft(handle, edge_x)
-                Canvas.SetTop(handle, ov_top)
+                Canvas.SetTop(handle, row_top + 2)
                 self.TimelineCanvas.Children.Add(handle)
                 self._tl_overlays.append(handle)
 
-            # Time labels shown when selected
             if selected:
                 for val_ms, lx in ((ov['start_ms'], x1), (ov['end_ms'], x1 + bar_w)):
                     tlbl = TextBlock()
@@ -950,7 +1078,7 @@ class VideoSyncPage:
                     tlbl.Foreground       = _brush(r, g, b)
                     tlbl.IsHitTestVisible = False
                     Canvas.SetLeft(tlbl, lx + 2)
-                    Canvas.SetTop(tlbl, ov_top - 12)
+                    Canvas.SetTop(tlbl, row_top - 11)
                     self.TimelineCanvas.Children.Add(tlbl)
                     self._tl_overlays.append(tlbl)
 
@@ -991,10 +1119,19 @@ class VideoSyncPage:
         x, y = pos.X, pos.Y
         h    = self.TimelineCanvas.ActualHeight
 
-        # Check overlay bar region first
-        ov_top = self._ov_bar_top(h)
-        if ov_top <= y <= ov_top + self._OV_BAR_H:
-            self._handle_tl_ov_mousedown(x, sender, e)
+        # Check overlay area first
+        ov_area_top = self._ov_area_top(h)
+        ov_area_bot = ov_area_top + self._ov_area_h()
+        if ov_area_top <= y <= ov_area_bot:
+            # Double-click → time editor
+            if e.ClickCount == 2:
+                for ov_id, (x1, x2, row) in self._ov_tl_rects.items():
+                    row_top = self._ov_row_top(h, row)
+                    if row_top is not None and x1 <= x <= x2 and row_top <= y <= row_top + self._OV_ROW_H:
+                        self._show_time_editor(ov_id)
+                        e.Handled = True
+                        return
+            self._handle_tl_ov_mousedown(x, y, sender, e)
             return
 
         # Deselect overlay when clicking outside bar region
@@ -1010,15 +1147,20 @@ class VideoSyncPage:
             return
         click_x  = x - self._LEFT_MARGIN
         data_w   = self._data_w(w)
-        video_ms = min(max(0.0, click_x) / data_w * total_ms, self._duration_ms)
+        # Allow selecting positions beyond the video duration (track may be longer)
+        video_ms = max(0.0, click_x) / data_w * total_ms
         self._seek(video_ms)
 
-    def _handle_tl_ov_mousedown(self, x, sender, e):
+    def _handle_tl_ov_mousedown(self, x, y, sender, e):
         EDGE = 6
         hit_id, mode = None, 'move'
+        h = self.TimelineCanvas.ActualHeight
 
-        for ov_id, (x1, x2) in self._ov_tl_rects.items():
-            if x1 <= x <= x2:
+        for ov_id, (x1, x2, row) in self._ov_tl_rects.items():
+            row_top = self._ov_row_top(h, row)
+            if row_top is None:
+                continue
+            if x1 <= x <= x2 and row_top <= y <= row_top + self._OV_ROW_H:
                 hit_id = ov_id
                 if x - x1 <= EDGE:
                     mode = 'left'
@@ -1027,7 +1169,6 @@ class VideoSyncPage:
                 break
 
         if hit_id is None:
-            # Clicked in overlay row but not on any bar — deselect
             self._select_overlay(None)
             return
 
@@ -1038,13 +1179,15 @@ class VideoSyncPage:
         data_w   = self._data_w(w)
 
         self._tl_ov_drag = {
-            'id':       hit_id,
-            'mode':     mode,
-            'start_x':  x,
-            'start_ms': ov['start_ms'],
-            'end_ms':   ov['end_ms'],
-            'total_ms': total_ms,
-            'data_w':   data_w,
+            'id':        hit_id,
+            'mode':      mode,
+            'start_x':   x,
+            'start_y':   y,
+            'start_row': ov['row'],
+            'start_ms':  ov['start_ms'],
+            'end_ms':    ov['end_ms'],
+            'total_ms':  total_ms,
+            'data_w':    data_w,
         }
         sender.CaptureMouse()
         e.Handled = True
@@ -1060,25 +1203,40 @@ class VideoSyncPage:
         if ov is None:
             return
 
+        # ── Row change from vertical drag ────────────────────────────────────
+        dy         = pos.Y - drag['start_y']
+        row_delta  = int(dy / self._OV_ROW_H + (0.5 if dy >= 0 else -0.5))
+        new_row    = max(0, drag['start_row'] + row_delta)
+        ov['row']  = new_row
+        if new_row >= self._ov_num_rows:
+            self._ov_num_rows = new_row + 1   # grow rows on demand
+
+        # ── Horizontal move / resize with optional snap ───────────────────────
         mode = drag['mode']
         if mode == 'move':
             dur       = drag['end_ms'] - drag['start_ms']
-            new_start = max(0.0, drag['start_ms'] + dx_ms)
+            raw_start = max(0.0, drag['start_ms'] + dx_ms)
+            # Try snapping start, then end
+            snapped = self._snap_ms(raw_start, drag['id'])
+            if snapped == raw_start:
+                snapped_end = self._snap_ms(raw_start + dur, drag['id'])
+                if snapped_end != raw_start + dur:
+                    snapped = max(0.0, snapped_end - dur)
+            new_start = snapped
             new_end   = new_start + dur
-            if self._duration_ms > 0:
-                if new_end > self._duration_ms:
-                    new_end   = self._duration_ms
-                    new_start = max(0.0, new_end - dur)
+            if self._duration_ms > 0 and new_end > self._duration_ms:
+                new_end   = self._duration_ms
+                new_start = max(0.0, new_end - dur)
             ov['start_ms'] = new_start
             ov['end_ms']   = new_end
         elif mode == 'left':
-            ov['start_ms'] = max(0.0, min(drag['end_ms'] - 200.0,
-                                           drag['start_ms'] + dx_ms))
+            raw = max(0.0, min(drag['end_ms'] - 200.0, drag['start_ms'] + dx_ms))
+            ov['start_ms'] = self._snap_ms(raw, drag['id'])
         elif mode == 'right':
-            new_end = max(drag['start_ms'] + 200.0, drag['end_ms'] + dx_ms)
+            raw = max(drag['start_ms'] + 200.0, drag['end_ms'] + dx_ms)
             if self._duration_ms > 0:
-                new_end = min(new_end, self._duration_ms)
-            ov['end_ms'] = new_end
+                raw = min(raw, self._duration_ms)
+            ov['end_ms'] = self._snap_ms(raw, drag['id'])
 
         self._rebuild_tl_overlays()
         self._ensure_playhead()
@@ -1089,28 +1247,6 @@ class VideoSyncPage:
             sender.ReleaseMouseCapture()
             self._tl_ov_drag = None
 
-    def _on_timeline_dblclick(self, sender, e):
-        # Clear any drag state left by the first click of the double-click sequence
-        self._tl_ov_drag = None
-        try:
-            sender.ReleaseMouseCapture()
-        except Exception:
-            pass
-
-        pos = e.GetPosition(self.TimelineCanvas)
-        x, y = pos.X, pos.Y
-        h    = self.TimelineCanvas.ActualHeight
-
-        ov_top = self._ov_bar_top(h)
-        if not (ov_top <= y <= ov_top + self._OV_BAR_H):
-            return
-
-        for ov_id, (x1, x2) in self._ov_tl_rects.items():
-            if x1 <= x <= x2:
-                self._show_time_editor(ov_id)
-                e.Handled = True
-                return
-
     # ── Text overlay: video canvas ────────────────────────────────────────────
 
     def _on_add_overlay(self, _s, _e):
@@ -1120,11 +1256,16 @@ class VideoSyncPage:
         end_ms   = start_ms + 5000.0
         if self._duration_ms > 0:
             end_ms = min(end_ms, self._duration_ms)
+        # Place in the first row that has no overlapping block, else row 0
+        used_rows = {o['row'] for o in self._overlays
+                     if o['start_ms'] < end_ms and o['end_ms'] > start_ms}
+        row = next((r for r in range(self._ov_num_rows) if r not in used_rows), 0)
         ov = {
             'id':       ov_id,
             'text':     f"Text {ov_id + 1}",
             'x_frac':   0.05,
             'y_frac':   0.10,
+            'row':      row,
             'start_ms': start_ms,
             'end_ms':   end_ms,
             'border':   None,
@@ -1297,6 +1438,61 @@ class VideoSyncPage:
         self._rebuild_tl_overlays()
         self._ensure_playhead()
 
+    # ── Snap ──────────────────────────────────────────────────────────────────
+
+    def _snap_ms(self, ms, exclude_ov_id):
+        """Return ms snapped to nearest candidate if within pixel threshold."""
+        if not self._snap_enabled:
+            return ms
+        total_ms = self._tl_axis_ms()
+        w        = self.TimelineCanvas.ActualWidth
+        data_w   = self._data_w(w)
+        if total_ms <= 0 or data_w <= 0:
+            return ms
+        threshold = 8.0 / data_w * total_ms   # 8 px in time units
+
+        candidates = [0.0]
+        if self._duration_ms > 0:
+            candidates.append(self._duration_ms)
+        gpx_dur = self._gpx_duration_ms()
+        if gpx_dur > 0:
+            candidates.append(gpx_dur)
+        for ov in self._overlays:
+            if ov['id'] == exclude_ov_id:
+                continue
+            candidates.append(ov['start_ms'])
+            candidates.append(ov['end_ms'])
+
+        best, best_d = ms, threshold
+        for c in candidates:
+            d = abs(ms - c)
+            if d < best_d:
+                best_d = d
+                best   = c
+        return best
+
+    def _on_snap_toggle(self, _s, _e):
+        self._snap_enabled = not self._snap_enabled
+        self.TxtSnapLabel.Text = "⊠ Snap ON" if self._snap_enabled else "□ Snap OFF"
+        self.BtnSnap.Background = (
+            _brush(0xD1, 0xFA, 0xE5) if self._snap_enabled   # green tint when on
+            else _brush(0xE4, 0xE4, 0xE7))
+
+    def _on_tl_mousewheel(self, sender, e):
+        """Scroll the overlay rows when wheel is used over the overlay area."""
+        h           = self.TimelineCanvas.ActualHeight
+        area_top    = self._ov_area_top(h)
+        area_bot    = area_top + self._ov_area_h()
+        pos         = e.GetPosition(self.TimelineCanvas)
+        if not (area_top <= pos.Y <= area_bot):
+            return
+        delta           = -1 if e.Delta > 0 else 1
+        max_scroll      = max(0, self._ov_num_rows - self._NUM_VISIBLE_ROWS)
+        self._ov_scroll_row = max(0, min(max_scroll, self._ov_scroll_row + delta))
+        self._rebuild_tl_overlays()
+        self._ensure_playhead()
+        e.Handled = True
+
     # ── Time editor dialog ────────────────────────────────────────────────────
 
     def _show_time_editor(self, ov_id):
@@ -1335,7 +1531,7 @@ class VideoSyncPage:
             tb.Text    = _fmt_ms(value_ms)
             tb.Width   = 110
             tb.Padding = Thickness(6, 4, 6, 4)
-            tb.FontFamily = "Consolas"
+            tb.FontFamily = FontFamily("Consolas")
             row.Children.Add(lbl)
             row.Children.Add(tb)
             return row, tb

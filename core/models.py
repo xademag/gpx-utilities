@@ -8,6 +8,7 @@ class GPXPoint:
     lon: float
     ele: Optional[float] = None
     time: Optional[str] = None
+    extensions: Optional[str] = None
 
 
 @dataclass
