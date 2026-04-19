@@ -1008,11 +1008,16 @@
             // Update label
             document.getElementById('ctx-lbl').innerHTML = hasSel ? 'Selection' : 'Track';
 
-            // Items that need a range selection
-            var rangeOnly = ['ctx-delete', 'ctx-deletejoin', 'ctx-split', 'ctx-duplicate'];
+            // Items that need at least a range selection
+            var rangeOnly = ['ctx-delete', 'ctx-deletejoin', 'ctx-duplicate'];
             rangeOnly.forEach(function(id) {
                 _ctxSetDisabled(id, !hasRange);
             });
+
+            // Split: works with a single point or range, but not at the first/last point
+            var mn = hasSel ? _selMin() : -1, mx = hasSel ? _selMax() : -1;
+            var canSplit = hasSel && mn > 0 && mx < _allPts.length - 1;
+            _ctxSetDisabled('ctx-split', !canSplit);
 
             // Increase speed: works with selection OR whole track (needs timestamps)
             _ctxSetDisabled('ctx-speed', false);
@@ -1054,24 +1059,58 @@
             _buildPanel(_allPts);
         }
 
+        // Returns average speed (m/s) over up to N points ending just before idx.
+        function _avgSpeedBefore(idx) {
+            var N = 6, start = Math.max(0, idx - N);
+            var totalDist = 0, totalMs = 0;
+            for (var i = start; i < idx - 1; i++) {
+                var p1 = _allPts[i], p2 = _allPts[i + 1];
+                if (!p1.time || !p2.time) { continue; }
+                var t1 = _epoch(p1.time), t2 = _epoch(p2.time);
+                if (t1 === null || t2 === null || t2 <= t1) { continue; }
+                totalDist += _haversine(p1.lat, p1.lon, p2.lat, p2.lon);
+                totalMs   += (t2 - t1);
+            }
+            return totalMs > 0 ? (totalDist / totalMs * 1000) : 0; // m/s
+        }
+
         function ctxDeleteJoin() {
             _hideCtxMenu();
             var mn = _selMin(), mx = _selMax();
 
             // ── Time-gap correction ───────────────────────────────────────────
-            // Measure the duration of the deleted segment and subtract it from
-            // all timestamps that come after, so the track time is continuous.
-            var tFirst = _epoch(_allPts[mn].time);
-            var tLast  = _epoch(_allPts[mx].time);
-            var delta  = (tFirst !== null && tLast !== null && tLast > tFirst)
-                         ? (tLast - tFirst) : 0;
+            // Use the average speed of the segment just before the selection to
+            // compute a realistic travel time across the join, avoiding a 0-speed
+            // artifact between the two reconnected points.
+            var pBefore = mn > 0 ? _allPts[mn - 1] : null;
+            var pAfter  = mx < _allPts.length - 1 ? _allPts[mx + 1] : null;
+            var delta   = 0;
+
+            if (pBefore && pAfter && pBefore.time && pAfter.time) {
+                var tBefore = _epoch(pBefore.time);
+                var tAfterOrig = _epoch(pAfter.time);
+                if (tBefore !== null && tAfterOrig !== null) {
+                    var speedMs = _avgSpeedBefore(mn); // m/s
+                    if (speedMs > 0) {
+                        var d = _haversine(pBefore.lat, pBefore.lon, pAfter.lat, pAfter.lon);
+                        var newGapMs = Math.round(d / speedMs * 1000);
+                        delta = tAfterOrig - (tBefore + newGapMs);
+                    } else {
+                        // No speed data — fall back to subtracting the deleted duration
+                        var tFirst = _epoch(_allPts[mn].time);
+                        var tLast  = _epoch(_allPts[mx].time);
+                        delta = (tFirst !== null && tLast !== null && tLast > tFirst)
+                                ? (tLast - tFirst) : 0;
+                    }
+                }
+            }
 
             // Remove selected points
             var count = mx - mn + 1;
             _allPts.splice(mn, count);
 
-            // Shift all subsequent timestamps back by delta
-            if (delta > 0) {
+            // Shift all subsequent timestamps so the join is seamless
+            if (delta !== 0) {
                 for (var i = mn; i < _allPts.length; i++) {
                     if (_allPts[i].time) {
                         var t = _epoch(_allPts[i].time);
@@ -1096,20 +1135,23 @@
         function ctxSplit() {
             _hideCtxMenu();
             var mn = _selMin(), mx = _selMax();
-            // The selection becomes the split boundary.
-            // Segment A ends at mn-1, segment B starts at mx+1.
-            // Points mn..mx are removed.
             if (mn === 0 || mx === _allPts.length - 1) { return; } // can't split at edges
-            _allPts.splice(mn, mx - mn + 1);
-            // After splice the old mx+1 is now at mn.
-            // Split between mn-1 and mn.
-            _splitIdx = mn - 1;
+
+            if (mn === mx) {
+                // Single-point selection: split AFTER this point, keep it in segment A
+                _splitIdx = mn;
+            } else {
+                // Range selection: remove the selected points and split at the boundary
+                _allPts.splice(mn, mx - mn + 1);
+                _splitIdx = mn - 1;
+            }
             _anchorIdx = -1; _selEnd = -1;
             if (_selPoly) { map.removeLayer(_selPoly); _selPoly = null; }
             _anchorDot.setStyle({ opacity: 0, fillOpacity: 0 });
             _endDot.setStyle({ opacity: 0, fillOpacity: 0 });
             _redrawPolylines();
             _buildPanel(_allPts);
+            _callPython('split', { split_idx: _splitIdx });
         }
 
         function ctxDuplicate() {
@@ -1188,13 +1230,31 @@
         // ── Change start time ─────────────────────────────────────────────────
         function ctxChangeStartTime() {
             _hideCtxMenu();
-            if (!_allPts.length || !_allPts[0].time) { alert('No timestamps available.'); return; }
-            var cur = _allPts[0].time.replace('Z','').replace('T',' ');
-            _showModal('Change Start Time',
+
+            // When the track is split, operate only on the segment that was right-clicked
+            var segStart = 0, segEnd = _allPts.length - 1, segLabel = '';
+            if (_splitIdx >= 0 && _anchorIdx > _splitIdx) {
+                segStart = _splitIdx + 1;
+                segLabel = ' — Segment 2';
+            } else if (_splitIdx >= 0) {
+                segEnd   = _splitIdx;
+                segLabel = ' — Segment 1';
+            }
+
+            if (!_allPts[segStart] || !_allPts[segStart].time) { alert('No timestamps available.'); return; }
+            var cur = _allPts[segStart].time.replace('Z','').replace('T',' ');
+
+            _showModal('Change Start Time' + segLabel,
                 '<div class="modal-field">' +
                   '<label class="modal-label">New start time (UTC)</label>' +
-                  '<input id="mi-start" class="modal-input" type="text" value="'+cur+'" placeholder="YYYY-MM-DD HH:MM:SS"/>' +
-                  '<div class="modal-hint">All timestamps will shift by the same offset.</div>' +
+                  '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">' +
+                    '<input id="mi-start" class="modal-input" type="text" value="'+cur+'" placeholder="YYYY-MM-DD HH:MM:SS" style="flex:1;margin-bottom:0"/>' +
+                    '<button onclick="var v=document.getElementById(\'mi-start\').value.trim();var d=(v.split(/[T ]/)[0]||v);document.getElementById(\'mi-start\').value=d+\' 00:00:00\';" '+
+                            'style="padding:6px 9px;font-size:11px;white-space:nowrap;border:1px solid #D4D4D8;border-radius:6px;background:#F4F4F5;cursor:pointer;color:#3F3F46;">'+
+                      '00:00:00'+
+                    '</button>' +
+                  '</div>' +
+                  '<div class="modal-hint">All timestamps in this segment will shift by the same offset.</div>' +
                 '</div>',
                 function() {
                     var raw = document.getElementById('mi-start').value.trim().replace(' ','T');
@@ -1202,10 +1262,10 @@
                     if (!/Z$/i.test(raw)) { raw += 'Z'; }
                     var newT = new Date(raw).getTime();
                     if (isNaN(newT)) { alert('Invalid format. Use: YYYY-MM-DD HH:MM:SS'); return; }
-                    var oldT = _epoch(_allPts[0].time);
+                    var oldT = _epoch(_allPts[segStart].time);
                     if (oldT === null) { return; }
                     var delta = newT - oldT;
-                    for (var i = 0; i < _allPts.length; i++) {
+                    for (var i = segStart; i <= segEnd; i++) {
                         if (_allPts[i].time) {
                             var t = _epoch(_allPts[i].time);
                             if (t !== null) {
@@ -1367,6 +1427,10 @@
                 var to = e.toElement || e.relatedTarget;
                 while (to) { if (to === list) { return; } to = to.parentNode; }
                 _clearHover();
+            };
+            list.onmousedown = function(e) {
+                // Prevent IE11 from entering text-selection mode on shift+click
+                if (e.shiftKey) { e.preventDefault ? e.preventDefault() : (e.returnValue = false); }
             };
             list.onclick = function(e) {
                 var el = e.target || e.srcElement;
@@ -1640,6 +1704,39 @@
         function togglePanel() {
             _panelOpen = !_panelOpen;
             document.getElementById('point-panel').style.display = _panelOpen ? 'block' : 'none';
+        }
+
+        // ── Video-overlay API (called by VideoSyncPage) ───────────────────────
+        var _vidPosMarker = null;
+        var _vidPosIcon   = L.divIcon({
+            html: '<div style="width:12px;height:12px;border-radius:50%;background:#F97316;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
+            iconSize: [12, 12], iconAnchor: [6, 6], className: ''
+        });
+
+        function loadTrack(ptsJson) {
+            // Reuse drawTrack but disable editing gestures by clearing pts after draw
+            drawTrack(ptsJson);
+        }
+
+        function setPosition(lat, lon) {
+            if (!_vidPosMarker) {
+                _vidPosMarker = L.marker([lat, lon], { icon: _vidPosIcon, zIndexOffset: 2000 }).addTo(map);
+            } else {
+                _vidPosMarker.setLatLng([lat, lon]);
+            }
+        }
+
+        function clearPosition() {
+            if (_vidPosMarker) { map.removeLayer(_vidPosMarker); _vidPosMarker = null; }
+        }
+
+        function setOverlayMode() {
+            // Hide all editing UI for compact overlay use
+            var hide = ['toggle-btn','point-panel','ctx-menu','meas-tool','help-overlay'];
+            for (var i = 0; i < hide.length; i++) {
+                var el = document.getElementById(hide[i]);
+                if (el) el.style.display = 'none';
+            }
         }
     </script>
 </body>

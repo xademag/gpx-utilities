@@ -95,6 +95,97 @@ class MapPage:
             settings_mod.save(self._settings)
             if self._on_settings_changed:
                 self._on_settings_changed(self._settings)
+        elif action == 'split':
+            self._on_split_detected(int(data['split_idx']))
+
+    # ── Split segments ────────────────────────────────────────────────────────
+
+    def _on_split_detected(self, split_idx):
+        """Called by the JS callback queue when the user splits a track."""
+        fi, ti = self._active
+        # Find the active track TreeViewItem
+        for file_item in self.FileTree.Items:
+            for track_item in file_item.Items:
+                if str(track_item.Tag) == f"{fi},{ti}":
+                    self._clear_split_segments(track_item)
+                    if split_idx >= 0:
+                        track_item.IsExpanded = True
+                        seg1 = self._make_segment_item(0, "Segment 1")
+                        seg2 = self._make_segment_item(1, "Segment 2")
+                        track_item.Items.Add(seg1)
+                        track_item.Items.Add(seg2)
+                    return
+
+    @staticmethod
+    def _clear_split_segments(track_item):
+        """Remove any existing segment sub-items from a track TreeViewItem."""
+        to_remove = [item for item in track_item.Items
+                     if item.Tag is not None and str(item.Tag).startswith("seg,")]
+        for item in to_remove:
+            track_item.Items.Remove(item)
+
+    def _make_segment_item(self, seg_idx, label):
+        item = TreeViewItem()
+        item.Tag      = f"seg,{seg_idx}"
+        item.FontSize = 11.0
+
+        sp             = StackPanel()
+        sp.Orientation = Orientation.Horizontal
+
+        btn                  = Button()
+        btn.Content          = "💾"
+        btn.FontSize         = 11.0
+        btn.Width            = 20.0
+        btn.Height           = 18.0
+        btn.Margin           = Thickness(0, 0, 5, 0)
+        btn.Background       = Brushes.Transparent
+        btn.BorderThickness  = Thickness(0)
+        btn.VerticalAlignment = VerticalAlignment.Center
+        btn.Tag              = str(seg_idx)
+        btn.Click           += self._on_save_segment
+
+        tb                   = TextBlock()
+        tb.Text              = label
+        tb.VerticalAlignment = VerticalAlignment.Center
+        tb.Foreground        = _CLR_MUTED
+
+        sp.Children.Add(btn)
+        sp.Children.Add(tb)
+        item.Header = sp
+        return item
+
+    def _on_save_segment(self, sender, e):
+        e.Handled = True
+        seg_idx = int(str(sender.Tag))
+        try:
+            pts_json  = str(self.MapBrowser.InvokeScript("getModifiedPts"))
+            split_raw = self.MapBrowser.InvokeScript("getSplitIdx")
+            split_idx = int(str(split_raw)) if split_raw is not None else -1
+            pts = json.loads(pts_json)
+        except Exception as ex:
+            self.LblStatus.Text = f"Error reading track: {ex}"
+            return
+
+        if not pts or split_idx < 0:
+            self.LblStatus.Text = "No split to save."
+            return
+
+        segment = pts[:split_idx + 1] if seg_idx == 0 else pts[split_idx + 1:]
+        if not segment:
+            self.LblStatus.Text = "Segment is empty."
+            return
+
+        dlg = SaveFileDialog()
+        dlg.Title      = f"Save Segment {seg_idx + 1}"
+        dlg.Filter     = "GPX files (*.gpx)|*.gpx"
+        dlg.DefaultExt = ".gpx"
+        if not dlg.ShowDialog():
+            return
+        try:
+            write_gpx(segment, str(dlg.FileName))
+            self.LblStatus.Text = f"Segment {seg_idx + 1} saved"
+        except Exception as ex:
+            self.LblStatus.Text = f"Save error: {ex}"
 
     # ── Apply settings ────────────────────────────────────────────────────────
 
@@ -199,7 +290,7 @@ class MapPage:
         if item is None:
             return
         tag = str(item.Tag) if item.Tag is not None else ""
-        if "," not in tag:
+        if "," not in tag or tag.startswith("seg,"):
             return
         fi, ti = int(tag.split(",")[0]), int(tag.split(",")[1])
         if ti == -1:
@@ -424,6 +515,14 @@ class MapPage:
         tracks = f["tracks"]
         if ti < 0 or ti >= len(tracks):
             return
+
+        # Clear segment sub-items from the previously active track
+        prev_fi, prev_ti = self._active
+        if (prev_fi, prev_ti) != (fi, ti):
+            for file_item in self.FileTree.Items:
+                for track_item in file_item.Items:
+                    if str(track_item.Tag) == f"{prev_fi},{prev_ti}":
+                        self._clear_split_segments(track_item)
 
         self._active = (fi, ti)
         track = tracks[ti]

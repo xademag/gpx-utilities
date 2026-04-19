@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+  #map { width: 100%; height: 100%; }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<script>
+
+    var map = L.map('map', { zoomControl: true, attributionControl: false });
+
+    // ── Tile configuration ────────────────────────────────────────────────────
+    var _TILES = {
+        map:      { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',                                     maxZoom: 19 },
+        relief:   { url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png',                                       maxZoom: 17 },
+        satellite:{ url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19 },
+        hybrid:   { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19 }
+    };
+    var _currentTile  = null;
+    var _currentStyle = 'map';
+    var _tilePort     = 0;
+
+    function _localUrl(style) {
+        return 'http://127.0.0.1:' + _tilePort + '/tiles/' + style + '/{z}/{x}/{y}.png';
+    }
+
+    function setTileServerPort(port) {
+        _tilePort = parseInt(port, 10) || 0;
+        setTileLayer(_currentStyle);
+    }
+
+    function setTileLayer(name) {
+        if (!_TILES[name]) { name = 'map'; }
+        _currentStyle = name;
+        if (_currentTile) { map.removeLayer(_currentTile); }
+        var url = (_tilePort > 0) ? _localUrl(name) : _TILES[name].url;
+        _currentTile = L.tileLayer(url, { maxZoom: _TILES[name].maxZoom }).addTo(map);
+    }
+
+    setTileLayer('map');
+    map.setView([48.8566, 2.3522], 5);
+
+    // ── Track polyline ────────────────────────────────────────────────────────
+    var _trackLine = null;
+
+    function loadTrack(ptsJson) {
+        if (_trackLine) { map.removeLayer(_trackLine); _trackLine = null; }
+        var pts;
+        try { pts = JSON.parse(ptsJson); } catch(e) { return; }
+        if (!pts || !pts.length) { return; }
+        var ll = pts.map(function(p) { return [p.lat, p.lon]; });
+        _trackLine = L.polyline(ll, { color: '#2563EB', weight: 3, opacity: 0.8 }).addTo(map);
+        map.fitBounds(_trackLine.getBounds(), { padding: [12, 12] });
+    }
+
+    function clearTrack() {
+        if (_trackLine) { map.removeLayer(_trackLine); _trackLine = null; }
+        if (_posMarker) { map.removeLayer(_posMarker); _posMarker = null; }
+    }
+
+    // ── Position marker ───────────────────────────────────────────────────────
+    var _posMarker = null;
+    var _posIcon   = L.divIcon({
+        html: '<div style="width:12px;height:12px;border-radius:50%;background:#F97316;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
+        iconSize:   [12, 12],
+        iconAnchor: [6,  6],
+        className:  ''
+    });
+
+    function setPosition(lat, lon) {
+        if (!_posMarker) {
+            _posMarker = L.marker([lat, lon], { icon: _posIcon, zIndexOffset: 1000 }).addTo(map);
+        } else {
+            _posMarker.setLatLng([lat, lon]);
+        }
+    }
+
+    function clearPosition() {
+        if (_posMarker) { map.removeLayer(_posMarker); _posMarker = null; }
+    }
+
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import threading
 
 from ui.pages.page_map   import MapPage
 from ui.pages.page_route import RoutePage
+from ui.pages.page_video import VideoSyncPage
 from core import settings as settings_mod
 from core import tile_server as tile_server_mod
 
@@ -27,9 +28,9 @@ class MainWindow:
 
         self._settings = settings_mod.load()
 
-        self._tab_borders  = [self.BtnMap,     self.BtnRoute]
-        self._tab_texts    = [self.BtnMapText, self.BtnRouteText]
-        self._page_classes = [MapPage,         RoutePage]
+        self._tab_borders  = [self.BtnMap,     self.BtnRoute,     self.BtnVideo]
+        self._tab_texts    = [self.BtnMapText, self.BtnRouteText, self.BtnVideoText]
+        self._page_classes = [MapPage,         RoutePage,         VideoSyncPage]
         self._page_cache   = {}   # tab_idx → page instance
         self._active_tab   = 0
 
@@ -112,10 +113,16 @@ class MainWindow:
             text.Foreground   = _rgb(24, 24, 27)    if active else _rgb(161, 161, 170)
 
         if tab_idx not in self._page_cache:
+            extra = {}
+            if self._page_classes[tab_idx] is VideoSyncPage:
+                extra['get_map_page'] = lambda: self._page_cache.get(0)
             self._page_cache[tab_idx] = self._page_classes[tab_idx](
-                self._settings, self._on_settings_changed)
+                self._settings, self._on_settings_changed, **extra)
 
-        self.MainFrame.Navigate(self._page_cache[tab_idx]._wpf)
+        page = self._page_cache[tab_idx]
+        if hasattr(page, 'on_activated'):
+            page.on_activated()
+        self.MainFrame.Navigate(page._wpf)
 
     # ── Settings popup ────────────────────────────────────────────────────────
 

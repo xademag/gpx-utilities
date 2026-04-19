@@ -74,6 +74,14 @@
                                    Foreground="#A1A1AA"/>
                     </Border>
 
+                    <Border Name="BtnVideo" CornerRadius="5" Padding="12,5"
+                            Margin="2,0" Background="Transparent" Cursor="Hand">
+                        <TextBlock Name="BtnVideoText"
+                                   Text="Video Sync"
+                                   FontSize="12" FontWeight="Medium"
+                                   Foreground="#A1A1AA"/>
+                    </Border>
+
                 </StackPanel>
             </DockPanel>
         </Border>
